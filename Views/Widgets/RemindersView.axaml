@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels.Widgets"
+             xmlns:controls="using:Kuromi.Controls"
+             x:Class="Kuromi.Views.Widgets.RemindersView"
+             x:DataType="vm:RemindersViewModel">
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- New reminder -->
+        <TextBox Grid.Row="0" Classes="kuromi" Text="{Binding NewText}"
+                 PlaceholderText="Novo lembrete…" Margin="0,0,0,8"/>
+
+        <!-- Due presets + add -->
+        <WrapPanel Grid.Row="1" Margin="0,0,0,10">
+            <Button Classes="pill accent" Content="Adicionar" Margin="0,0,6,6"
+                    Command="{Binding AddCommand}" CommandParameter="0" Padding="14,10"/>
+            <Button Classes="pill" Content="+15m" Margin="0,0,6,6" Padding="14,10"
+                    Command="{Binding AddCommand}" CommandParameter="15"/>
+            <Button Classes="pill" Content="+1h" Margin="0,0,6,6" Padding="14,10"
+                    Command="{Binding AddCommand}" CommandParameter="60"/>
+            <Button Classes="pill" Content="+3h" Margin="0,0,6,6" Padding="14,10"
+                    Command="{Binding AddCommand}" CommandParameter="180"/>
+            <Button Classes="pill" Content="Limpar feitos" Margin="0,0,6,6" Padding="14,10"
+                    Command="{Binding ClearDoneCommand}"/>
+        </WrapPanel>
+
+        <!-- List -->
+        <ScrollViewer Grid.Row="2">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ReminderItemViewModel">
+                        <Border CornerRadius="14" Background="{DynamicResource RowFill}" Margin="0,0,0,8" Padding="12,10">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <ToggleButton Classes="check" Grid.Column="0" IsChecked="{Binding Done}"
+                                              VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="1" Margin="6,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Text}" Foreground="{DynamicResource TextPrimary}"
+                                               FontSize="15" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding DueText}" IsVisible="{Binding HasDue}"
+                                               FontSize="12" Margin="0,2,0,0">
+                                        <TextBlock.Foreground>
+                                            <SolidColorBrush Color="#FF8A8A" Opacity="1"/>
+                                        </TextBlock.Foreground>
+                                    </TextBlock>
+                                </StackPanel>
+                                <Button Grid.Column="2" Classes="icon" Width="36" Height="36"
+                                        Command="{Binding $parent[ItemsControl].((vm:RemindersViewModel)DataContext).RemoveCommand}"
+                                        CommandParameter="{Binding}">
+                                    <controls:LucideIcon Kind="trash-2" Width="15" Height="15"
+                                                         Brush="{DynamicResource TextSecondary}"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

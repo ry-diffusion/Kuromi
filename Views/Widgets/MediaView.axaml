@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels.Widgets"
+             xmlns:controls="using:Kuromi.Controls"
+             x:Class="Kuromi.Views.Widgets.MediaView"
+             x:DataType="vm:MediaViewModel">
+    <Grid>
+        <!-- Nothing playing / unavailable -->
+        <StackPanel IsVisible="{Binding !HasPlayer}" Orientation="Horizontal" Spacing="10"
+                    VerticalAlignment="Center" HorizontalAlignment="Center">
+            <controls:LucideIcon Kind="music" Width="20" Height="20" VerticalAlignment="Center"
+                                 Brush="{DynamicResource TextMuted}"/>
+            <TextBlock Text="Nada tocando" Classes="muted" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Player (single row: art | title/artist | controls) -->
+        <Grid IsVisible="{Binding HasPlayer}" ColumnDefinitions="Auto,*,Auto"
+              VerticalAlignment="Center">
+            <!-- Album art -->
+            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="10"
+                    ClipToBounds="True" Background="{DynamicResource RowFill}">
+                <Panel>
+                    <controls:LucideIcon Kind="music" Width="20" Height="20"
+                                         IsVisible="{Binding !HasArt}"
+                                         Brush="{DynamicResource AccentBrush}"/>
+                    <Image Source="{Binding ArtPath, Converter={StaticResource PathToBitmap}}"
+                           IsVisible="{Binding HasArt}" Stretch="UniformToFill"/>
+                </Panel>
+            </Border>
+
+            <!-- Title / artist -->
+            <StackPanel Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center" Spacing="1">
+                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimary}"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding Artist}" Classes="muted" FontSize="12"
+                           TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+
+            <!-- Transport controls -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                        VerticalAlignment="Center">
+                <Button Classes="icon" Width="36" Height="36" Command="{Binding PreviousCommand}">
+                    <controls:LucideIcon Kind="skip-back" Width="16" Height="16"
+                                         Brush="{DynamicResource TextPrimary}"/>
+                </Button>
+                <Button Width="42" Height="42" CornerRadius="21" Padding="0" BorderThickness="0"
+                        HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                        Background="{Binding Accent}" Command="{Binding PlayPauseCommand}">
+                    <Panel>
+                        <controls:LucideIcon Kind="pause" Width="18" Height="18" Brush="{DynamicResource OnAccentBrush}"
+                                             IsVisible="{Binding Playing}"/>
+                        <controls:LucideIcon Kind="play" Width="18" Height="18" Brush="{DynamicResource OnAccentBrush}"
+                                             IsVisible="{Binding !Playing}"/>
+                    </Panel>
+                </Button>
+                <Button Classes="icon" Width="36" Height="36" Command="{Binding NextCommand}">
+                    <controls:LucideIcon Kind="skip-forward" Width="16" Height="16"
+                                         Brush="{DynamicResource TextPrimary}"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

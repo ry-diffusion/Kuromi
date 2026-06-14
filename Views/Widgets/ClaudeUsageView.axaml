@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels.Widgets"
+             xmlns:controls="using:Kuromi.Controls"
+             x:Class="Kuromi.Views.Widgets.ClaudeUsageView"
+             x:DataType="vm:ClaudeUsageViewModel">
+    <ScrollViewer>
+        <StackPanel Spacing="12">
+
+            <!-- ===== Limites (quota OAuth) ===== -->
+            <StackPanel IsVisible="{Binding HasQuota}" Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Limites" Classes="label" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Classes="icon" Width="34" Height="34"
+                            Command="{Binding RefreshCommand}">
+                        <controls:LucideIcon Kind="refresh-cw" Width="15" Height="15"
+                                             Brush="{DynamicResource TextPrimary}"/>
+                    </Button>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Quotas}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:QuotaRow">
+                            <StackPanel Spacing="3" Margin="0,0,0,8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="{Binding Label}" Classes="label"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding PercentText}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{Binding BarColor, Converter={StaticResource StringToBrush}}"/>
+                                </Grid>
+                                <ProgressBar Value="{Binding Percent}" Maximum="100" Height="7"
+                                             CornerRadius="4" Background="{DynamicResource RowFill}"
+                                             Foreground="{Binding BarColor, Converter={StaticResource StringToBrush}}"/>
+                                <TextBlock Text="{Binding ResetText}" Classes="muted"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- ===== ccusage (custo/tokens) ===== -->
+            <TextBlock IsVisible="{Binding Loading}" Text="consultando ccusage…" Classes="muted"/>
+
+            <StackPanel IsVisible="{Binding HasError}" Spacing="8">
+                <TextBlock Text="{Binding Error}" Classes="muted" TextWrapping="Wrap"/>
+                <Button Classes="pill" Content="Tentar de novo" Command="{Binding RefreshCommand}"
+                        HorizontalAlignment="Left"/>
+            </StackPanel>
+
+            <StackPanel IsVisible="{Binding HasData}" Spacing="8">
+                <StackPanel>
+                    <TextBlock Text="Bloco atual (5h) · ccusage" Classes="label"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="{Binding ActiveCost}" Classes="metric" FontSize="30"/>
+                        <TextBlock Text="{Binding ActiveTokens}" Classes="muted" FontSize="14"
+                                   VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <ProgressBar Value="{Binding BlockProgress}" Maximum="100" Height="8"
+                             CornerRadius="4" Foreground="{DynamicResource AccentBrush}"
+                             Background="{DynamicResource RowFill}"/>
+
+                <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding Remaining}" Classes="muted"/>
+                    <TextBlock Text="{Binding BurnRate}" Classes="muted"/>
+                    <TextBlock Text="{Binding Models}" Classes="label"/>
+                    <TextBlock Text="{Binding ProjectedCost, StringFormat='projeção do bloco: {0}'}"
+                               Classes="muted"/>
+                </StackPanel>
+
+                <Border CornerRadius="14" Background="{DynamicResource RowFill}" Padding="10" Height="92">
+                    <controls:BarChart Values="{Binding DailyCosts}" BarBrush="{DynamicResource Accent2Brush}"/>
+                </Border>
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="{Binding DailyRange}" Classes="muted"/>
+                    <TextBlock Grid.Column="1" Text="{Binding TotalCost}" Classes="label"/>
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

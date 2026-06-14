@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels.Widgets"
+             xmlns:controls="using:Kuromi.Controls"
+             x:Class="Kuromi.Views.Widgets.QuickActionsView"
+             x:DataType="vm:QuickActionsViewModel">
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="4"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:QuickActionItemViewModel">
+                        <Panel Margin="5">
+                            <Button Classes="pill" HorizontalAlignment="Stretch" Height="84" Padding="6"
+                                    Command="{Binding RunCommand}">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                                    <controls:LucideIcon Kind="{Binding Glyph}" Width="26" Height="26"
+                                                         HorizontalAlignment="Center"
+                                                         Brush="{Binding Accent, Converter={StaticResource StringToBrush}}"/>
+                                    <TextBlock Text="{Binding Label}" FontSize="13"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="icon" Width="28" Height="28"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="0,-6,-6,0"
+                                    IsVisible="{Binding $parent[ItemsControl].((vm:QuickActionsViewModel)DataContext).EditMode}"
+                                    Command="{Binding $parent[ItemsControl].((vm:QuickActionsViewModel)DataContext).RemoveCommand}"
+                                    CommandParameter="{Binding}">
+                                <controls:LucideIcon Kind="x" Width="14" Height="14"
+                                                     Brush="{DynamicResource TextPrimary}"/>
+                            </Button>
+                        </Panel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Add form (edit mode) -->
+        <StackPanel Grid.Row="1" IsVisible="{Binding EditMode}" Spacing="6" Margin="0,8,0,0">
+            <Grid ColumnDefinitions="92,*">
+                <TextBox Grid.Column="0" Classes="kuromi" Text="{Binding NewGlyph}"
+                         PlaceholderText="ícone" Margin="0,0,6,0"/>
+                <TextBox Grid.Column="1" Classes="kuromi" Text="{Binding NewLabel}"
+                         PlaceholderText="Nome da ação"/>
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBox Grid.Column="0" Classes="kuromi" Text="{Binding NewCommand}"
+                         PlaceholderText="Comando shell (ex: gnome-control-center)" Margin="0,0,6,0"/>
+                <Button Grid.Column="1" Classes="pill accent" Content="Add"
+                        Command="{Binding AddCommand}"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</UserControl>

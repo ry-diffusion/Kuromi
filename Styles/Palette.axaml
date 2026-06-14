@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- ============================================================
+         Unified color module. Every color in the app lives here.
+         Adaptive brushes switch with the system Light/Dark variant;
+         accent brushes are overridden at runtime from the wallpaper.
+         (C# code reads the matching constants from Palette.cs.)
+         ============================================================ -->
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="TextSecondary" Color="#E4DFEE"/>
+            <SolidColorBrush x:Key="TextMuted" Color="#B8B1C6"/>
+            <SolidColorBrush x:Key="CardStroke" Color="#33FFFFFF"/>
+            <SolidColorBrush x:Key="ControlFill" Color="#26FFFFFF"/>
+            <SolidColorBrush x:Key="ControlFillHover" Color="#40FFFFFF"/>
+            <SolidColorBrush x:Key="RowFill" Color="#24FFFFFF"/>
+            <SolidColorBrush x:Key="CardBackground" Color="#33181425"/>
+            <Color x:Key="GlassSurfaceColor">#820D0A14</Color>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="TextPrimary" Color="#0E0B14"/>
+            <SolidColorBrush x:Key="TextSecondary" Color="#2A2536"/>
+            <SolidColorBrush x:Key="TextMuted" Color="#4A4458"/>
+            <SolidColorBrush x:Key="CardStroke" Color="#33FFFFFF"/>
+            <SolidColorBrush x:Key="ControlFill" Color="#26000000"/>
+            <SolidColorBrush x:Key="ControlFillHover" Color="#3D000000"/>
+            <SolidColorBrush x:Key="RowFill" Color="#1F000000"/>
+            <SolidColorBrush x:Key="CardBackground" Color="#8AFFFFFF"/>
+            <Color x:Key="GlassSurfaceColor">#A6FFFFFF</Color>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- Brand palette (raw colors) -->
+    <Color x:Key="KuromiPink">#FF7AB6</Color>
+    <Color x:Key="KuromiPurple">#9B8CFF</Color>
+    <Color x:Key="KuromiCyan">#7AD7FF</Color>
+    <Color x:Key="KuromiGreen">#7CFFB2</Color>
+
+    <!-- Accent (defaults; overridden at runtime from the wallpaper / album art) -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#FF7AB6"/>
+    <SolidColorBrush x:Key="Accent2Brush" Color="#9B8CFF"/>
+
+    <!-- Fixed semantic brushes -->
+    <SolidColorBrush x:Key="OnAccentBrush" Color="#1A1622"/>
+    <SolidColorBrush x:Key="InfoBrush" Color="#7AD7FF"/>
+    <SolidColorBrush x:Key="OkBrush" Color="#2FB872"/>
+    <SolidColorBrush x:Key="WarnBrush" Color="#E8983A"/>
+    <SolidColorBrush x:Key="CritBrush" Color="#E5484D"/>
+
+    <!-- Icon glyph font (Nerd Font fallback chain; most glyphs are vector LucideIcon) -->
+    <FontFamily x:Key="IconFont">JetBrainsMono Nerd Font, Symbols Nerd Font, Noto Sans Symbols</FontFamily>
+</ResourceDictionary>

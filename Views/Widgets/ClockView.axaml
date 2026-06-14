@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels.Widgets"
+             x:Class="Kuromi.Views.Widgets.ClockView"
+             x:DataType="vm:ClockViewModel">
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+        <StackPanel HorizontalAlignment="Center">
+            <TextBlock Text="{Binding Greeting}" FontSize="20" HorizontalAlignment="Center"
+                       Margin="0,0,0,-4" FontWeight="Medium"
+                       Foreground="{DynamicResource AccentBrush}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="{Binding Time}" FontSize="84" FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimary}"/>
+                <TextBlock Text="{Binding Seconds}" FontSize="28" FontWeight="SemiBold"
+                           Margin="8,16,0,0" VerticalAlignment="Top"
+                           Foreground="{DynamicResource AccentBrush}"/>
+            </StackPanel>
+            <TextBlock Text="{Binding Date}" FontSize="17" HorizontalAlignment="Center"
+                       Margin="0,2,0,0" Foreground="{DynamicResource TextSecondary}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

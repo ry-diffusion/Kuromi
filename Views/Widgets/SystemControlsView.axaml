@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels.Widgets"
+             xmlns:controls="using:Kuromi.Controls"
+             xmlns:models="using:Kuromi.Models"
+             x:Class="Kuromi.Views.Widgets.SystemControlsView"
+             x:DataType="vm:SystemControlsViewModel">
+    <StackPanel Spacing="14">
+
+        <!-- Brightness -->
+        <StackPanel IsVisible="{Binding BrightnessAvailable}" Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <controls:LucideIcon Kind="sun" Width="16" Height="16" VerticalAlignment="Center"
+                                     Brush="{DynamicResource AccentBrush}"/>
+                <TextBlock Text="Brilho" Classes="label" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Slider Minimum="1" Maximum="100" Value="{Binding Brightness}"
+                    Foreground="{DynamicResource AccentBrush}"/>
+        </StackPanel>
+
+        <!-- Volume -->
+        <StackPanel IsVisible="{Binding VolumeAvailable}" Spacing="4">
+            <Grid ColumnDefinitions="*,Auto" Height="36">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                            VerticalAlignment="Center">
+                    <controls:LucideIcon Kind="volume-2" Width="16" Height="16" VerticalAlignment="Center"
+                                         Brush="{DynamicResource Accent2Brush}"/>
+                    <TextBlock Text="Volume" Classes="label" VerticalAlignment="Center"/>
+                </StackPanel>
+                <ToggleButton Grid.Column="1" Classes="icon" Width="36" Height="36"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding Muted, Mode=OneWay}"
+                              Command="{Binding ToggleMuteCommand}">
+                    <controls:LucideIcon Kind="volume-x" Width="16" Height="16"
+                                         Brush="{DynamicResource TextPrimary}"/>
+                </ToggleButton>
+            </Grid>
+            <Slider Minimum="0" Maximum="100" Value="{Binding Volume}"
+                    Foreground="{DynamicResource Accent2Brush}"/>
+        </StackPanel>
+
+        <!-- Audio output selector -->
+        <StackPanel IsVisible="{Binding HasOutputs}" Spacing="6">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <controls:LucideIcon Kind="speaker" Width="16" Height="16" VerticalAlignment="Center"
+                                     Brush="{DynamicResource Accent2Brush}"/>
+                <TextBlock Text="Saída de áudio" Classes="label" VerticalAlignment="Center"/>
+            </StackPanel>
+            <ComboBox ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedOutput}"
+                      HorizontalAlignment="Stretch" MinHeight="44"
+                      Background="{DynamicResource ControlFill}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:AudioSink">
+                        <TextBlock Text="{Binding Description}" TextTrimming="CharacterEllipsis"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </StackPanel>
+
+        <!-- Dark mode -->
+        <Grid ColumnDefinitions="*,Auto" Height="36">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <controls:LucideIcon Kind="moon" Width="16" Height="16" VerticalAlignment="Center" Brush="{DynamicResource InfoBrush}"/>
+                <TextBlock Text="Tema escuro" Classes="label" VerticalAlignment="Center"/>
+            </StackPanel>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding DarkMode}" VerticalAlignment="Center"/>
+        </Grid>
+
+        <TextBlock Text="{Binding BackendName, StringFormat='backend: {0}'}" Classes="muted"/>
+    </StackPanel>
+</UserControl>

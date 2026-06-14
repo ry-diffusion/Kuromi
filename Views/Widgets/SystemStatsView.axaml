@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels.Widgets"
+             xmlns:controls="using:Kuromi.Controls"
+             x:Class="Kuromi.Views.Widgets.SystemStatsView"
+             x:DataType="vm:SystemStatsViewModel">
+    <Grid RowDefinitions="*,Auto,Auto">
+
+        <!-- Gauges -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
+            <controls:RingGauge Grid.Column="0" Value="{Binding CpuPercent}" Caption="CPU"
+                                ArcBrush="{DynamicResource AccentBrush}" Margin="6"/>
+            <controls:RingGauge Grid.Column="1" Value="{Binding MemPercent}" Caption="RAM"
+                                ArcBrush="{DynamicResource Accent2Brush}" Margin="6"/>
+            <Grid Grid.Column="2" Margin="6">
+                <controls:RingGauge Value="{Binding GpuPercent}" Caption="GPU"
+                                    ArcBrush="{DynamicResource InfoBrush}" IsVisible="{Binding GpuAvailable}"/>
+                <StackPanel IsVisible="{Binding !GpuAvailable}" VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                    <TextBlock Text="GPU" Classes="label" HorizontalAlignment="Center"/>
+                    <TextBlock Text="N/D" Classes="metric" FontSize="20" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Detail line -->
+        <StackPanel Grid.Row="1" Margin="6,8,6,4" Spacing="3">
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Memória" Classes="label"/>
+                <TextBlock Grid.Column="1" Text="{Binding MemText}" Classes="muted"
+                           HorizontalAlignment="Right"/>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Grid.Column="0" Text="Swap" Classes="label"/>
+                <TextBlock Grid.Column="1" Text="{Binding SwapText}" Classes="muted"
+                           HorizontalAlignment="Right"/>
+            </Grid>
+            <TextBlock Text="{Binding GpuName}" Classes="muted" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+
+        <!-- CPU history sparkline -->
+        <Border Grid.Row="2" Height="64" Margin="6,4,6,0" CornerRadius="12"
+                Background="{DynamicResource RowFill}" Padding="8">
+            <controls:Sparkline Values="{Binding CpuHistory}" Max="100"
+                                Stroke="{DynamicResource AccentBrush}"/>
+        </Border>
+    </Grid>
+</UserControl>

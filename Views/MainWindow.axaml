@@ -1,0 +1,143 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Kuromi.ViewModels"
+        xmlns:models="using:Kuromi.Models"
+        xmlns:controls="using:Kuromi.Controls"
+        xmlns:lg="using:LiquidGlassAvaloniaUI"
+        x:Class="Kuromi.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Kuromi"
+        Width="1500" Height="900"
+        MinWidth="720" MinHeight="520"
+        Background="#0E0B14"
+        FontFamily="{StaticResource AppFont}"
+        WindowDecorations="None"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <!-- ===== Sharp wallpaper (the liquid-glass cards do the blurring) ===== -->
+        <Image Source="{Binding Wallpaper}" Stretch="UniformToFill"
+               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <Border Background="Black" Opacity="{Binding OverlayOpacity}"/>
+
+        <!-- ===== Bento grid (fills the screen) ===== -->
+        <ItemsControl Name="WidgetHost" ItemsSource="{Binding Dashboard.Widgets}" Margin="12">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Grid ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,*"
+                          RowDefinitions="*,*,*,*,*,*,*,*"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.Styles>
+                <Style Selector="ContentPresenter">
+                    <Setter Property="Grid.Column" Value="{ReflectionBinding Col}"/>
+                    <Setter Property="Grid.Row" Value="{ReflectionBinding Row}"/>
+                    <Setter Property="Grid.ColumnSpan" Value="{ReflectionBinding ColSpan}"/>
+                    <Setter Property="Grid.RowSpan" Value="{ReflectionBinding RowSpan}"/>
+                </Style>
+            </ItemsControl.Styles>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:WidgetViewModel">
+                    <lg:LiquidGlassSurface Margin="9" CornerRadius="22"
+                                           BlurRadius="2" RefractionHeight="26" RefractionAmount="46"
+                                           ChromaticAberration="True" DepthEffect="True"
+                                           Vibrancy="1.2" SurfaceColor="{DynamicResource GlassSurfaceColor}">
+                        <DockPanel>
+                            <!-- Header (drag handle in edit mode) -->
+                            <Grid DockPanel.Dock="Top" Tag="drag" Height="40"
+                                  Background="#01000000" Margin="6,4,6,0"
+                                  ColumnDefinitions="Auto,*,Auto">
+                                <controls:LucideIcon Grid.Column="0" Kind="{Binding IconKind}"
+                                                     Width="18" Height="18" Margin="12,0,0,0"
+                                                     VerticalAlignment="Center"
+                                                     Brush="{DynamicResource AccentBrush}"/>
+                                <TextBlock Grid.Column="1" Classes="label" Margin="10,0,0,0"
+                                           VerticalAlignment="Center" FontSize="14"
+                                           Text="{Binding Title}"/>
+                                <Button Grid.Column="2" Classes="icon" Width="32" Height="32"
+                                        IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EditMode}"
+                                        Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Dashboard.RemoveWidgetCommand}"
+                                        CommandParameter="{Binding}">
+                                    <controls:LucideIcon Kind="x" Width="16" Height="16"
+                                                         Brush="{DynamicResource TextPrimary}"/>
+                                </Button>
+                            </Grid>
+
+                            <!-- Resize grip (bottom-right, edit mode) -->
+                            <Grid DockPanel.Dock="Bottom" Height="0">
+                                <Border Tag="resize" Width="26" Height="26"
+                                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                        Margin="0,0,4,4" CornerRadius="8"
+                                        Background="{DynamicResource AccentBrush}"
+                                        IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EditMode}">
+                                    <controls:LucideIcon Kind="move" Width="14" Height="14"
+                                                         Brush="{DynamicResource OnAccentBrush}"/>
+                                </Border>
+                            </Grid>
+
+                            <ContentControl Content="{Binding Content}" Margin="14,4,14,12"/>
+                        </DockPanel>
+                    </lg:LiquidGlassSurface>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- ===== Auto-hide control strip ===== -->
+        <Border Name="TopBar" VerticalAlignment="Top" Height="56" Padding="18,0"
+                Background="#55000000" IsHitTestVisible="{Binding ControlsVisible}"
+                Opacity="{Binding ControlsOpacity}">
+            <Border.Transitions>
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.18"/>
+                </Transitions>
+            </Border.Transitions>
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <controls:LucideIcon Grid.Column="0" Kind="grip-horizontal" Width="18" Height="18"
+                                     VerticalAlignment="Center" Brush="#AAFFFFFF"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10"
+                            VerticalAlignment="Center">
+                    <Button Classes="icon" Name="AddButton" IsVisible="{Binding EditMode}"
+                            ToolTip.Tip="Adicionar widget">
+                        <controls:LucideIcon Kind="plus" Width="20" Height="20" Brush="White"/>
+                        <Button.Flyout>
+                            <Flyout Placement="Bottom">
+                                <ItemsControl Name="KindsList" ItemsSource="{Binding Dashboard.AllKinds}"
+                                              Width="220">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="models:WidgetKind">
+                                            <Button Classes="pill" Margin="0,3"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left"
+                                                    Content="{Binding Converter={StaticResource WidgetKindToTitle}}"
+                                                    Command="{Binding #KindsList.((vm:MainWindowViewModel)DataContext).Dashboard.AddWidgetCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                    <ToggleButton Classes="icon" IsChecked="{Binding EditMode, Mode=OneWay}"
+                                  Command="{Binding ToggleEditCommand}" ToolTip.Tip="Editar layout">
+                        <controls:LucideIcon Kind="pencil" Width="18" Height="18" Brush="White"/>
+                    </ToggleButton>
+                    <Button Classes="icon" Command="{Binding ToggleFullscreenCommand}"
+                            ToolTip.Tip="Tela cheia (F11)">
+                        <controls:LucideIcon Kind="maximize" Width="18" Height="18" Brush="White"/>
+                    </Button>
+                    <Button Classes="icon" Command="{Binding ExitCommand}" ToolTip.Tip="Fechar (Esc)">
+                        <controls:LucideIcon Kind="x" Width="18" Height="18" Brush="White"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ===== On-screen keyboard (touch) ===== -->
+        <controls:VirtualKeyboardView Name="Vkbd" VerticalAlignment="Bottom"
+                                      IsVisible="{Binding KeyboardVisible}"/>
+
+        <!-- invisible element used to pull focus away from text fields -->
+        <Border Name="FocusSink" Focusable="True" IsHitTestVisible="False"
+                Width="1" Height="1" Opacity="0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+    </Grid>
+</Window>
