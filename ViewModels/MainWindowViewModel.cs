@@ -81,25 +81,32 @@ public partial class MainWindowViewModel : ViewModelBase
             Wallpaper = bmp;
 
             if (_config.AccentFromWallpaper)
-                await ApplyAccentAsync(path);
+                await ApplyAccentAsync(path, preferDark);
         }
         catch { /* keep previous / none */ }
     }
 
-    private static async Task ApplyAccentAsync(string path)
+    /// <summary>
+    /// Derive a full Material You scheme from the wallpaper and push it into the
+    /// app resources: accent/secondary/tertiary (graphs &amp; controls) + dynamic,
+    /// theme-aware text colors that harmonize with the wallpaper.
+    /// </summary>
+    private static async Task ApplyAccentAsync(string path, bool dark)
     {
-        var accent = await WallpaperService.GetAccentAsync(path);
-        if (accent is not { } a) return;
-
-        var c1 = Color.FromRgb(a.accent.R, a.accent.G, a.accent.B);
-        var c2 = Color.FromRgb(a.accent2.R, a.accent2.G, a.accent2.B);
+        var palette = await Task.Run(() => MaterialPalette.FromImage(path, dark));
+        if (palette is not { } p) return;
 
         Dispatcher.UIThread.Post(() =>
         {
             var app = Application.Current;
             if (app is null) return;
-            app.Resources["AccentBrush"] = new SolidColorBrush(c1);
-            app.Resources["Accent2Brush"] = new SolidColorBrush(c2);
+            app.Resources["AccentBrush"] = new SolidColorBrush(p.Accent);
+            app.Resources["Accent2Brush"] = new SolidColorBrush(p.Secondary);
+            app.Resources["InfoBrush"] = new SolidColorBrush(p.Tertiary);
+            app.Resources["OnAccentBrush"] = new SolidColorBrush(p.OnAccent);
+            app.Resources["TextPrimary"] = new SolidColorBrush(p.TextPrimary);
+            app.Resources["TextSecondary"] = new SolidColorBrush(p.TextSecondary);
+            app.Resources["TextMuted"] = new SolidColorBrush(p.TextMuted);
         });
     }
 

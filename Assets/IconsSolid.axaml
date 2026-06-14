@@ -1,0 +1,8 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Solid (filled) media glyphs, Material-style, 24x24. Used with LucideIcon Filled="True". -->
+    <StreamGeometry x:Key="icon_play_solid">M8 5v14l11-7z</StreamGeometry>
+    <StreamGeometry x:Key="icon_pause_solid">M6 5h4v14H6z M14 5h4v14h-4z</StreamGeometry>
+    <StreamGeometry x:Key="icon_skip_forward_solid">M5 4l10 8-10 8z M19 5h2v14h-2z</StreamGeometry>
+    <StreamGeometry x:Key="icon_skip_back_solid">M19 4l-10 8 10 8z M5 5h2v14H5z</StreamGeometry>
+</ResourceDictionary>

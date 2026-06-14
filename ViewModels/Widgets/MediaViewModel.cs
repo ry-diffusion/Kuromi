@@ -24,8 +24,9 @@ public partial class MediaViewModel : ViewModelBase, IDisposable
     public bool HasArt => !string.IsNullOrEmpty(ArtPath);
     partial void OnArtPathChanged(string? value) => OnPropertyChanged(nameof(HasArt));
 
-    /// <summary>Accent color sampled from the album art (drives the play button).</summary>
+    /// <summary>Accent + on-accent sampled from the album art (drive the play button).</summary>
     [ObservableProperty] private IBrush _accent = new SolidColorBrush(Color.Parse("#FF7AB6"));
+    [ObservableProperty] private IBrush _accentForeground = new SolidColorBrush(Color.Parse("#1A1622"));
 
     public MediaViewModel(MediaService service)
     {
@@ -51,12 +52,16 @@ public partial class MediaViewModel : ViewModelBase, IDisposable
         Playing = m.Playing;
         ArtPath = m.ArtPath;
 
-        // Pull the accent from the album art.
+        // Pull a Material You accent from the album art.
         if (m.ArtPath != null)
         {
-            var c = await WallpaperService.GetAccentAsync(m.ArtPath);
-            if (c is { } v)
-                Accent = new SolidColorBrush(Color.FromRgb(v.accent.R, v.accent.G, v.accent.B));
+            var dark = Avalonia.Application.Current?.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark;
+            var p = await Task.Run(() => Services.MaterialPalette.FromImage(m.ArtPath, dark));
+            if (p is { } pal)
+            {
+                Accent = new SolidColorBrush(pal.Accent);
+                AccentForeground = new SolidColorBrush(pal.OnAccent);
+            }
         }
     }
 
