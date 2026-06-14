@@ -1,0 +1,204 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels"
+             xmlns:controls="using:Kuromi.Controls"
+             xmlns:glass="using:Kuromi.Glass"
+             x:Class="Kuromi.Views.SettingsView"
+             x:DataType="vm:MainWindowViewModel">
+
+    <UserControl.Styles>
+        <!-- All settings cards share the live liquid-glass tuning (bound via DynamicResource). -->
+        <Style Selector="glass|GlassSurface.card">
+            <Setter Property="CornerRadius" Value="22"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Width" Value="320"/>
+            <Setter Property="Margin" Value="8"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="BlurRadius" Value="{DynamicResource GlassBlurRadius}"/>
+            <Setter Property="RefractionHeight" Value="{DynamicResource GlassRefractionHeight}"/>
+            <Setter Property="RefractionAmount" Value="{DynamicResource GlassRefractionAmount}"/>
+            <Setter Property="ChromaticAberration" Value="{DynamicResource GlassChromatic}"/>
+            <Setter Property="DepthEffect" Value="{DynamicResource GlassDepthEffect}"/>
+            <Setter Property="Vibrancy" Value="{DynamicResource GlassVibrancy}"/>
+            <Setter Property="Brightness" Value="{DynamicResource GlassBrightness}"/>
+            <Setter Property="Contrast" Value="{DynamicResource GlassContrast}"/>
+            <Setter Property="HighlightOpacity" Value="{DynamicResource GlassHighlightOpacity}"/>
+            <Setter Property="ShadowEnabled" Value="{DynamicResource GlassShadowEnabled}"/>
+            <Setter Property="ShadowRadius" Value="{DynamicResource GlassShadowRadius}"/>
+            <Setter Property="SurfaceColor" Value="{DynamicResource GlassSurfaceColor}"/>
+        </Style>
+        <Style Selector="TextBlock.row">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top"
+                    MaxWidth="1040" Margin="24,44,24,150" Spacing="14">
+
+            <TextBlock Text="Ajustes" FontSize="28" FontWeight="Bold"
+                       Foreground="{DynamicResource TextPrimary}" Margin="14,0,0,2"/>
+
+            <!-- Responsive grid: cards flow into columns based on width -->
+            <WrapPanel HorizontalAlignment="Center">
+
+            <!-- Aparência -->
+            <glass:GlassSurface Classes="card">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Aparência" Classes="label" FontSize="14"/>
+
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <controls:LucideIcon Grid.Column="0" Kind="moon" Width="18" Height="18"
+                                             VerticalAlignment="Center" Brush="{DynamicResource InfoBrush}"/>
+                        <TextBlock Grid.Column="1" Classes="row" Text="Tema escuro"/>
+                        <glass:GlassSwitch Grid.Column="2" VerticalAlignment="Center"
+                                           IsChecked="{Binding DarkMode, Mode=TwoWay}"/>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <controls:LucideIcon Grid.Column="0" Kind="sparkles" Width="18" Height="18"
+                                             VerticalAlignment="Center" Brush="{DynamicResource AccentBrush}"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Spacing="1">
+                            <TextBlock Text="Cor do papel de parede" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Deriva o accent do wallpaper (Material You)" Classes="muted" FontSize="11"/>
+                        </StackPanel>
+                        <glass:GlassSwitch Grid.Column="2" VerticalAlignment="Center"
+                                           IsChecked="{Binding AccentFromWallpaper, Mode=TwoWay}"/>
+                    </Grid>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Escurecer fundo" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0" Maximum="0.7"
+                                           Value="{Binding OverlayOpacity, Mode=TwoWay}"
+                                           Foreground="{DynamicResource Accent2Brush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </glass:GlassSurface>
+
+            <!-- Vidro líquido — Lente -->
+            <glass:GlassSurface Classes="card">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Vidro líquido — Lente" Classes="label" FontSize="14"/>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Refração" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0" Maximum="120"
+                                           Value="{Binding GlassRefraction, Mode=TwoWay}"
+                                           Foreground="{DynamicResource AccentBrush}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Espessura (altura da refração)" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0" Maximum="60"
+                                           Value="{Binding GlassRefractionHeight, Mode=TwoWay}"
+                                           Foreground="{DynamicResource AccentBrush}"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <controls:LucideIcon Grid.Column="0" Kind="layout-grid" Width="18" Height="18"
+                                             VerticalAlignment="Center" Brush="{DynamicResource InfoBrush}"/>
+                        <TextBlock Grid.Column="1" Classes="row" Text="Profundidade (3D)"/>
+                        <glass:GlassSwitch Grid.Column="2" VerticalAlignment="Center"
+                                           IsChecked="{Binding GlassDepth, Mode=TwoWay}"/>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <controls:LucideIcon Grid.Column="0" Kind="sparkles" Width="18" Height="18"
+                                             VerticalAlignment="Center" Brush="{DynamicResource InfoBrush}"/>
+                        <TextBlock Grid.Column="1" Classes="row" Text="Aberração cromática"/>
+                        <glass:GlassSwitch Grid.Column="2" VerticalAlignment="Center"
+                                           IsChecked="{Binding GlassChromatic, Mode=TwoWay}"/>
+                    </Grid>
+                </StackPanel>
+            </glass:GlassSurface>
+
+            <!-- Vidro líquido — Fundo -->
+            <glass:GlassSurface Classes="card">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Vidro líquido — Fundo" Classes="label" FontSize="14"/>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Desfoque" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0" Maximum="12"
+                                           Value="{Binding GlassBlur, Mode=TwoWay}"
+                                           Foreground="{DynamicResource Accent2Brush}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Vibrância" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0" Maximum="2.5"
+                                           Value="{Binding GlassVibrancy, Mode=TwoWay}"
+                                           Foreground="{DynamicResource Accent2Brush}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Brilho" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="-0.5" Maximum="0.5"
+                                           Value="{Binding GlassBrightness, Mode=TwoWay}"
+                                           Foreground="{DynamicResource Accent2Brush}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Contraste" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0.5" Maximum="2"
+                                           Value="{Binding GlassContrast, Mode=TwoWay}"
+                                           Foreground="{DynamicResource Accent2Brush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </glass:GlassSurface>
+
+            <!-- Vidro líquido — Borda e sombra -->
+            <glass:GlassSurface Classes="card">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Vidro líquido — Borda e sombra" Classes="label" FontSize="14"/>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Brilho da borda" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0" Maximum="1"
+                                           Value="{Binding GlassHighlight, Mode=TwoWay}"
+                                           Foreground="{DynamicResource AccentBrush}"/>
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <controls:LucideIcon Grid.Column="0" Kind="monitor" Width="18" Height="18"
+                                             VerticalAlignment="Center" Brush="{DynamicResource InfoBrush}"/>
+                        <TextBlock Grid.Column="1" Classes="row" Text="Sombra"/>
+                        <glass:GlassSwitch Grid.Column="2" VerticalAlignment="Center"
+                                           IsChecked="{Binding GlassShadow, Mode=TwoWay}"/>
+                    </Grid>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Raio da sombra" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassSlider Minimum="0" Maximum="48"
+                                           Value="{Binding GlassShadowRadius, Mode=TwoWay}"
+                                           Foreground="{DynamicResource Accent2Brush}"/>
+                    </StackPanel>
+                </StackPanel>
+            </glass:GlassSurface>
+
+            <!-- Layout -->
+            <glass:GlassSurface Classes="card">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="Layout" Classes="label" FontSize="14"/>
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <controls:LucideIcon Grid.Column="0" Kind="pencil" Width="18" Height="18"
+                                             VerticalAlignment="Center" Brush="{DynamicResource AccentBrush}"/>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Spacing="1">
+                            <TextBlock Text="Editar layout" Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Mover e redimensionar os widgets" Classes="muted" FontSize="11"/>
+                        </StackPanel>
+                        <glass:GlassSwitch Grid.Column="2" VerticalAlignment="Center"
+                                           IsChecked="{Binding EditMode, Mode=TwoWay}"/>
+                    </Grid>
+                </StackPanel>
+            </glass:GlassSurface>
+
+            </WrapPanel>
+
+            <TextBlock Text="{Binding BackendName, StringFormat='backend: {0}'}"
+                       Classes="muted" Margin="14,2,0,0"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

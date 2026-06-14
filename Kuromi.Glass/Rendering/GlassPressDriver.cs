@@ -1,6 +1,7 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -21,9 +22,12 @@ internal sealed class GlassPressDriver
     private readonly GlassPressInteraction _press = new();
     private readonly DispatcherTimer _timer;
 
+    private const int ElevatedZ = 1000; // draw above siblings while pressed so the scale-up isn't covered
+
     private DateTime _lastTick;
     private int? _activePointerId;
     private TopLevel? _hooked;
+    private FloatingLens? _lens;
 
     public GlassPressDriver(Control owner, Func<bool> enabled, Func<double> maxScaleDip)
     {
@@ -53,7 +57,12 @@ internal sealed class GlassPressDriver
         _owner.InvalidateVisual();
 
         if (!animating)
+        {
+            // Only drop the elevation once the press has fully relaxed, so the shrink-back still draws on top.
+            if (_press.Progress < 0.01)
+                _owner.ZIndex = 0;
             _timer.Stop();
+        }
     }
 
     private void Start()
@@ -73,6 +82,8 @@ internal sealed class GlassPressDriver
 
         _activePointerId = e.Pointer.Id;
         _press.Press(e.GetPosition(_owner));
+        _owner.ZIndex = ElevatedZ; // pop above neighbours; the scale-up can now spill out of the container
+        EnsureLens().Show();       // lift a glass tile into the overlay so it floats above every card
         Hook();
         Apply();
         _owner.InvalidateVisual();
@@ -105,6 +116,7 @@ internal sealed class GlassPressDriver
     private void End()
     {
         _activePointerId = null;
+        _lens?.Hide();
         Unhook();
         _press.Release();
         Apply();
@@ -144,7 +156,44 @@ internal sealed class GlassPressDriver
     private void OnOwnerDetached(object? sender, VisualTreeAttachmentEventArgs e)
     {
         _activePointerId = null;
+        _owner.ZIndex = 0;
+        _lens?.Cancel();
         Unhook();
         _timer.Stop();
+    }
+
+    private FloatingLens EnsureLens()
+    {
+        if (_lens is not null)
+            return _lens;
+
+        // A glass RIM that lifts above every card, leaving the label/icon underneath completely untouched:
+        //  - fully transparent surface + identity grade (Vibrancy 1.0) so the clear centre is the exact
+        //    backdrop, pixel-for-pixel — no tint, no wash,
+        //  - no blur, edge-only refraction (the SDF fast-path passes the centre through unchanged),
+        //  - held at scale 1.0 (pure fade) so the tile samples the backdrop 1:1 — no magnified ghost over
+        //    the text. The lift reads from the soft shadow + rim highlight; the press driver's in-place
+        //    squish still provides the "pop".
+        GlassSurface tile = new()
+        {
+            RefractionHeight = 9,
+            RefractionAmount = 14,
+            BlurRadius = 0,
+            DepthEffect = false,
+            Vibrancy = 1.0,
+            SurfaceColor = Colors.Transparent,
+            HighlightOpacity = 0.6,
+            ShadowRadius = 20,
+            ShadowOffset = new Vector(0, 7),
+            ShadowColor = Color.FromArgb(75, 0, 0, 0),
+        };
+
+        _lens = new FloatingLens(
+            _owner, tile,
+            size: () => _owner.Bounds.Size,
+            hiddenScale: 1.0,
+            shownScale: 1.0,
+            cornerRadius: () => (_owner as TemplatedControl)?.CornerRadius ?? new CornerRadius(12));
+        return _lens;
     }
 }

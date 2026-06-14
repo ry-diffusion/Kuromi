@@ -159,7 +159,10 @@ public class GlassSurface : ContentControl, IGlassVisual
 
             return new Border
             {
-                ClipToBounds = true,
+                // Don't clip content: a pressed interactive child (e.g. a knob/button that grows) can then
+                // spill out past the card's rounded edge instead of being cut off. Normal content is inset
+                // by its own margins, so the rounded corners stay clean.
+                ClipToBounds = false,
                 [~Border.CornerRadiusProperty] = new TemplateBinding(CornerRadiusProperty),
                 Child = presenter,
             };

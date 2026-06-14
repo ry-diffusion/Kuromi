@@ -3,6 +3,7 @@
         xmlns:vm="using:Kuromi.ViewModels"
         xmlns:models="using:Kuromi.Models"
         xmlns:controls="using:Kuromi.Controls"
+        xmlns:views="using:Kuromi.Views"
         xmlns:glass="using:Kuromi.Glass"
         x:Class="Kuromi.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -21,7 +22,8 @@
         <Border Background="Black" Opacity="{Binding OverlayOpacity}"/>
 
         <!-- ===== Bento grid (fills the screen) ===== -->
-        <ItemsControl Name="WidgetHost" ItemsSource="{Binding Dashboard.Widgets}" Margin="12">
+        <ItemsControl Name="WidgetHost" ItemsSource="{Binding Dashboard.Widgets}" Margin="12"
+                      IsVisible="{Binding ShowDashboard}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <Grid ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,*"
@@ -39,9 +41,18 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:WidgetViewModel">
                     <glass:GlassSurface Margin="9" CornerRadius="22"
-                                        BlurRadius="2" RefractionHeight="32" RefractionAmount="72"
-                                        ChromaticAberration="True" DepthEffect="True"
-                                        Vibrancy="1.2" SurfaceColor="{DynamicResource GlassSurfaceColor}">
+                                        BlurRadius="{DynamicResource GlassBlurRadius}"
+                                        RefractionHeight="{DynamicResource GlassRefractionHeight}"
+                                        RefractionAmount="{DynamicResource GlassRefractionAmount}"
+                                        ChromaticAberration="{DynamicResource GlassChromatic}"
+                                        DepthEffect="{DynamicResource GlassDepthEffect}"
+                                        Vibrancy="{DynamicResource GlassVibrancy}"
+                                        Brightness="{DynamicResource GlassBrightness}"
+                                        Contrast="{DynamicResource GlassContrast}"
+                                        HighlightOpacity="{DynamicResource GlassHighlightOpacity}"
+                                        ShadowEnabled="{DynamicResource GlassShadowEnabled}"
+                                        ShadowRadius="{DynamicResource GlassShadowRadius}"
+                                        SurfaceColor="{DynamicResource GlassSurfaceColor}">
                         <DockPanel>
                             <!-- Header (drag handle in edit mode) -->
                             <Grid DockPanel.Dock="Top" Tag="drag" Height="40"
@@ -81,6 +92,9 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
+
+        <!-- ===== Settings page (Ajustes tab) ===== -->
+        <views:SettingsView IsVisible="{Binding ShowSettings}"/>
 
         <!-- ===== Auto-hide control strip ===== -->
         <Border Name="TopBar" VerticalAlignment="Top" Height="56" Padding="18,0"
@@ -131,6 +145,16 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!-- ===== Liquid-glass bottom tab bar ===== -->
+        <controls:GlassTabBar VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                              Margin="0,0,0,22"
+                              SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+            <controls:GlassTabBar.Tabs>
+                <controls:GlassTabItem Icon="layout-grid" Label="Painel"/>
+                <controls:GlassTabItem Icon="settings" Label="Ajustes"/>
+            </controls:GlassTabBar.Tabs>
+        </controls:GlassTabBar>
 
         <!-- ===== On-screen keyboard (touch) ===== -->
         <controls:VirtualKeyboardView Name="Vkbd" VerticalAlignment="Bottom"

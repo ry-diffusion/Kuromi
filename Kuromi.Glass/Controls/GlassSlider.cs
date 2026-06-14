@@ -121,6 +121,7 @@ public class GlassSlider : Slider
                 {
                     GlassKnob knob = new GlassKnob(KnobRestWidth, KnobRestHeight, PopWidth, PopHeight);
                     slider._knob = knob;
+                    knob.FloatLens = true; // the dragged lens floats above all cards (iOS magnifier), escaping the card
                     return new Border { Background = Brushes.Transparent, Child = knob };
                 }),
             }.RegisterInNameScope(ns);

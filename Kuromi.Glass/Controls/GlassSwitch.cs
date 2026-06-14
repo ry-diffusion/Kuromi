@@ -131,6 +131,8 @@ public class GlassSwitch : ToggleButton
 
             GlassKnob knob = new GlassKnob(KnobRestW, KnobRestH, KnobPressW, KnobPressH);
             sw._knob = knob;
+            knob.ElevationTarget = sw; // raise the whole switch so the popped knob clears its neighbours
+            knob.PopScale = 1.18;      // gentler than the slider — the pill track is short
             Canvas.SetLeft(knob, KnobOff);
             Canvas.SetTop(knob, FootTop);
 

@@ -47,15 +47,14 @@
                                      Brush="{DynamicResource Accent2Brush}"/>
                 <TextBlock Text="Saída de áudio" Classes="label" VerticalAlignment="Center"/>
             </StackPanel>
-            <ComboBox ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedOutput}"
-                      HorizontalAlignment="Stretch" MinHeight="44"
-                      Background="{DynamicResource ControlFill}">
-                <ComboBox.ItemTemplate>
+            <glass:GlassComboBox ItemsSource="{Binding Outputs}" SelectedItem="{Binding SelectedOutput}"
+                                 HorizontalAlignment="Stretch" Height="40">
+                <glass:GlassComboBox.ItemTemplate>
                     <DataTemplate x:DataType="models:AudioSink">
                         <TextBlock Text="{Binding Description}" TextTrimming="CharacterEllipsis"/>
                     </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+                </glass:GlassComboBox.ItemTemplate>
+            </glass:GlassComboBox>
         </StackPanel>
 
         <!-- Dark mode -->
@@ -66,7 +65,5 @@
             </StackPanel>
             <glass:GlassSwitch Grid.Column="1" IsChecked="{Binding DarkMode}" VerticalAlignment="Center"/>
         </Grid>
-
-        <TextBlock Text="{Binding BackendName, StringFormat='backend: {0}'}" Classes="muted"/>
     </StackPanel>
 </UserControl>

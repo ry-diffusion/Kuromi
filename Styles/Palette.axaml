@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="using:System">
     <!-- ============================================================
          Unified color module. Every color in the app lives here.
          Adaptive brushes switch with the system Light/Dark variant;
@@ -45,6 +46,19 @@
     <!-- Translucent accent colors for glass tinting (overridden at runtime alongside the brushes) -->
     <Color x:Key="AccentColor">#D7FF7AB6</Color>
     <Color x:Key="Accent2Color">#D79B8CFF</Color>
+
+    <!-- Liquid-glass tuning (live-adjustable from Ajustes; cards bind via DynamicResource) -->
+    <sys:Double x:Key="GlassRefractionAmount">72</sys:Double>
+    <sys:Double x:Key="GlassRefractionHeight">32</sys:Double>
+    <sys:Boolean x:Key="GlassDepthEffect">True</sys:Boolean>
+    <sys:Boolean x:Key="GlassChromatic">True</sys:Boolean>
+    <sys:Double x:Key="GlassBlurRadius">2</sys:Double>
+    <sys:Double x:Key="GlassVibrancy">1.2</sys:Double>
+    <sys:Double x:Key="GlassBrightness">0</sys:Double>
+    <sys:Double x:Key="GlassContrast">1</sys:Double>
+    <sys:Double x:Key="GlassHighlightOpacity">0.5</sys:Double>
+    <sys:Boolean x:Key="GlassShadowEnabled">True</sys:Boolean>
+    <sys:Double x:Key="GlassShadowRadius">24</sys:Double>
 
     <!-- Fixed semantic brushes -->
     <SolidColorBrush x:Key="OnAccentBrush" Color="#1A1622"/>

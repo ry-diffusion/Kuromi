@@ -60,6 +60,19 @@ public class KuromiConfig
     public double OverlayOpacity { get; set; } = 0.30;
     /// <summary>Derive accent colors from the wallpaper.</summary>
     public bool AccentFromWallpaper { get; set; } = true;
+
+    // --- Liquid-glass tuning (live-adjustable from Ajustes; the cards bind via DynamicResource) ---
+    public double GlassRefraction { get; set; } = 72;       // RefractionAmount
+    public double GlassRefractionHeight { get; set; } = 32; // RefractionHeight
+    public bool GlassDepth { get; set; } = true;            // DepthEffect
+    public bool GlassChromatic { get; set; } = true;        // ChromaticAberration
+    public double GlassBlur { get; set; } = 2;              // BlurRadius
+    public double GlassVibrancy { get; set; } = 1.2;        // Vibrancy
+    public double GlassBrightness { get; set; }             // Brightness (0)
+    public double GlassContrast { get; set; } = 1;          // Contrast
+    public double GlassHighlight { get; set; } = 0.5;       // HighlightOpacity
+    public bool GlassShadow { get; set; } = true;           // ShadowEnabled
+    public double GlassShadowRadius { get; set; } = 24;     // ShadowRadius
     /// <summary>One-time guard so the screenshot quick action is added only once.</summary>
     public bool ScreenshotActionSeeded { get; set; }
     /// <summary>One-time guard for shrinking the media widget to a single row.</summary>
