@@ -1,0 +1,83 @@
+// Kuromi.Glass — liquid-glass lens (rounded-rect SDF refraction + chromatic dispersion).
+// SKSL runtime effect. Ported from the AndroidLiquidGlass (Kyant0) technique:
+// a signed-distance field for the rounded rect drives an edge "height map"; the
+// gradient of the SDF gives the surface normal, and we displace the backdrop sample
+// along that normal by an amount that ramps up towards the edge (circleMap curve).
+
+uniform shader content;          // backdrop (already blurred + colour-graded)
+
+uniform float2 size;             // control size in DIPs
+uniform float4 cornerRadii;      // [topLeft, topRight, bottomRight, bottomLeft]
+uniform float  refractionHeight; // edge band thickness (DIP)
+uniform float  refractionAmount; // refraction strength (DIP, negative = inward)
+uniform float  depthEffect;      // 0..1 — bends normals toward the centre
+uniform float  dispersion;       // 0..1 — chromatic aberration strength
+
+float radiusAt(float2 c, float4 r) {
+    if (c.x >= 0.0) return (c.y < 0.0) ? r.y : r.z;
+    else            return (c.y < 0.0) ? r.x : r.w;
+}
+
+float sdRoundRect(float2 c, float2 hs, float radius) {
+    float2 q = abs(c) - (hs - radius);
+    return length(max(q, 0.0)) - radius + min(max(q.x, q.y), 0.0);
+}
+
+float2 gradRoundRect(float2 c, float2 hs, float radius) {
+    float2 q = abs(c) - (hs - radius);
+    if (q.x >= 0.0 || q.y >= 0.0) {
+        return sign(c) * normalize(max(q, 0.0));
+    }
+    float gx = step(q.y, q.x);
+    return sign(c) * float2(gx, 1.0 - gx);
+}
+
+// Quarter-circle ramp: 0 at the inner edge of the band, 1 at the outer rim.
+float circleMap(float x) {
+    x = clamp(x, 0.0, 1.0);
+    return 1.0 - sqrt(1.0 - x * x);
+}
+
+half4 sampleDispersed(float2 c0, float2 disp) {
+    half4 col = half4(0.0);
+    half4 t;
+    t = content.eval(c0 + disp);          col.r += t.r / 3.5;                    col.a += t.a / 7.0;
+    t = content.eval(c0 + disp * 0.6667); col.r += t.r / 3.5; col.g += t.g / 7.0; col.a += t.a / 7.0;
+    t = content.eval(c0 + disp * 0.3333); col.r += t.r / 3.5; col.g += t.g / 3.5; col.a += t.a / 7.0;
+    t = content.eval(c0);                                     col.g += t.g / 3.5; col.a += t.a / 7.0;
+    t = content.eval(c0 - disp * 0.3333); col.g += t.g / 3.5; col.b += t.b / 3.0; col.a += t.a / 7.0;
+    t = content.eval(c0 - disp * 0.6667);                     col.b += t.b / 3.0; col.a += t.a / 7.0;
+    t = content.eval(c0 - disp);          col.r += t.r / 7.0; col.b += t.b / 3.0; col.a += t.a / 7.0;
+    return col;
+}
+
+half4 main(float2 coord) {
+    float2 hs = size * 0.5;
+    float2 cc = coord - hs;
+    float radius = radiusAt(cc, cornerRadii);
+
+    float sd = sdRoundRect(cc, hs, radius);
+    float h = max(refractionHeight, 0.001);
+
+    // Flat interior: no refraction, sample straight through (cheap fast-path).
+    if (-sd >= h) {
+        return content.eval(coord);
+    }
+
+    sd = min(sd, 0.0);
+    float d = circleMap(1.0 - (-sd / h)) * refractionAmount;
+
+    float gradRadius = min(radius * 1.5, min(hs.x, hs.y));
+    float2 grad = gradRoundRect(cc, hs, gradRadius);
+    grad = normalize(grad + depthEffect * normalize(cc));
+
+    float2 refracted = coord + d * grad;
+
+    if (dispersion <= 0.001) {
+        return content.eval(refracted);
+    }
+
+    float denom = max(hs.x * hs.y, 0.001);
+    float intensity = dispersion * ((cc.x * cc.y) / denom);
+    return sampleDispersed(refracted, d * grad * intensity);
+}

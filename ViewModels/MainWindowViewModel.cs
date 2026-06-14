@@ -104,6 +104,9 @@ public partial class MainWindowViewModel : ViewModelBase
             app.Resources["Accent2Brush"] = new SolidColorBrush(p.Secondary);
             app.Resources["InfoBrush"] = new SolidColorBrush(p.Tertiary);
             app.Resources["OnAccentBrush"] = new SolidColorBrush(p.OnAccent);
+            // Translucent accent *colors* for glass tinting (glass tints with a Color, not a Brush).
+            app.Resources["AccentColor"] = Color.FromArgb(215, p.Accent.R, p.Accent.G, p.Accent.B);
+            app.Resources["Accent2Color"] = Color.FromArgb(215, p.Secondary.R, p.Secondary.G, p.Secondary.B);
             app.Resources["TextPrimary"] = new SolidColorBrush(p.TextPrimary);
             app.Resources["TextSecondary"] = new SolidColorBrush(p.TextSecondary);
             app.Resources["TextMuted"] = new SolidColorBrush(p.TextMuted);

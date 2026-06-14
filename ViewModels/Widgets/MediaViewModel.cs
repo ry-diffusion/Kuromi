@@ -27,6 +27,8 @@ public partial class MediaViewModel : ViewModelBase, IDisposable
     /// <summary>Accent + on-accent sampled from the album art (drive the play button).</summary>
     [ObservableProperty] private IBrush _accent = new SolidColorBrush(Color.Parse("#FF7AB6"));
     [ObservableProperty] private IBrush _accentForeground = new SolidColorBrush(Color.Parse("#1A1622"));
+    /// <summary>Translucent album-art accent for tinting the glass play button.</summary>
+    [ObservableProperty] private Color _accentColor = Color.FromArgb(215, 0xFF, 0x7A, 0xB6);
 
     public MediaViewModel(MediaService service)
     {
@@ -61,6 +63,7 @@ public partial class MediaViewModel : ViewModelBase, IDisposable
             {
                 Accent = new SolidColorBrush(pal.Accent);
                 AccentForeground = new SolidColorBrush(pal.OnAccent);
+                AccentColor = Color.FromArgb(215, pal.Accent.R, pal.Accent.G, pal.Accent.B);
             }
         }
     }

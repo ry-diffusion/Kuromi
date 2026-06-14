@@ -1,9 +1,18 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="using:Kuromi.Controls">
+        xmlns:controls="using:Kuromi.Controls"
+        xmlns:glass="using:Kuromi.Glass">
 
     <!-- Colors live in Styles/Palette.axaml (merged in App.axaml); these styles
          consume them via DynamicResource. -->
+
+    <!-- Touch kiosk: no focus rectangle on buttons/sliders (incl. the glass controls). -->
+    <Style Selector=":is(Button)">
+        <Setter Property="FocusAdorner" Value="{x:Null}"/>
+    </Style>
+    <Style Selector=":is(Slider)">
+        <Setter Property="FocusAdorner" Value="{x:Null}"/>
+    </Style>
 
     <!-- Card container -->
     <Style Selector="Border.card">
@@ -43,11 +52,11 @@
     </Style>
 
     <!-- Pill button (touch friendly) -->
-    <Style Selector="Button.pill">
+    <Style Selector=":is(Button).pill">
         <Setter Property="Background" Value="{DynamicResource ControlFill}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="CornerRadius" Value="14"/>
+        <Setter Property="CornerRadius" Value="22"/>
         <Setter Property="Padding" Value="18,12"/>
         <Setter Property="MinHeight" Value="48"/>
         <Setter Property="FontWeight" Value="Medium"/>
@@ -64,10 +73,14 @@
     </Style>
 
     <!-- Accent pill -->
-    <Style Selector="Button.accent">
+    <Style Selector=":is(Button).accent">
         <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <!-- Glass ignores Background, so accent glass buttons tint their surface with the accent color. -->
+    <Style Selector="glass|GlassButton.accent">
+        <Setter Property="SurfaceColor" Value="{DynamicResource AccentColor}"/>
     </Style>
 
     <!-- Round icon button (matches Button AND ToggleButton via :is) -->
@@ -84,12 +97,12 @@
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
-    <Style Selector=":is(Button).icon:pointerover /template/ ContentPresenter">
+    <Style Selector="Button.icon:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource ControlFillHover}"/>
     </Style>
 
     <!-- Virtual keyboard key -->
-    <Style Selector="Button.key">
+    <Style Selector=":is(Button).key">
         <Setter Property="Background" Value="{DynamicResource ControlFill}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="BorderThickness" Value="0"/>

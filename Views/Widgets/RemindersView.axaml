@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Kuromi.ViewModels.Widgets"
              xmlns:controls="using:Kuromi.Controls"
+             xmlns:glass="using:Kuromi.Glass"
              x:Class="Kuromi.Views.Widgets.RemindersView"
              x:DataType="vm:RemindersViewModel">
     <Grid RowDefinitions="Auto,Auto,*">
@@ -12,15 +13,15 @@
 
         <!-- Due presets + add -->
         <WrapPanel Grid.Row="1" Margin="0,0,0,10">
-            <Button Classes="pill accent" Content="Adicionar" Margin="0,0,6,6"
+            <glass:GlassButton Classes="pill accent" Content="Adicionar" Margin="0,0,6,6"
                     Command="{Binding AddCommand}" CommandParameter="0" Padding="14,10"/>
-            <Button Classes="pill" Content="+15m" Margin="0,0,6,6" Padding="14,10"
+            <glass:GlassButton Classes="pill" Content="+15m" Margin="0,0,6,6" Padding="14,10"
                     Command="{Binding AddCommand}" CommandParameter="15"/>
-            <Button Classes="pill" Content="+1h" Margin="0,0,6,6" Padding="14,10"
+            <glass:GlassButton Classes="pill" Content="+1h" Margin="0,0,6,6" Padding="14,10"
                     Command="{Binding AddCommand}" CommandParameter="60"/>
-            <Button Classes="pill" Content="+3h" Margin="0,0,6,6" Padding="14,10"
+            <glass:GlassButton Classes="pill" Content="+3h" Margin="0,0,6,6" Padding="14,10"
                     Command="{Binding AddCommand}" CommandParameter="180"/>
-            <Button Classes="pill" Content="Limpar feitos" Margin="0,0,6,6" Padding="14,10"
+            <glass:GlassButton Classes="pill" Content="Limpar feitos" Margin="0,0,6,6" Padding="14,10"
                     Command="{Binding ClearDoneCommand}"/>
         </WrapPanel>
 
@@ -43,12 +44,12 @@
                                         </TextBlock.Foreground>
                                     </TextBlock>
                                 </StackPanel>
-                                <Button Grid.Column="2" Classes="icon" Width="36" Height="36"
+                                <glass:GlassButton Grid.Column="2" Classes="icon" Width="36" Height="36"
                                         Command="{Binding $parent[ItemsControl].((vm:RemindersViewModel)DataContext).RemoveCommand}"
                                         CommandParameter="{Binding}">
                                     <controls:LucideIcon Kind="trash-2" Width="15" Height="15"
                                                          Brush="{DynamicResource TextSecondary}"/>
-                                </Button>
+                                </glass:GlassButton>
                             </Grid>
                         </Border>
                     </DataTemplate>

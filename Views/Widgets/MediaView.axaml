@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Kuromi.ViewModels.Widgets"
              xmlns:controls="using:Kuromi.Controls"
+             xmlns:glass="using:Kuromi.Glass"
              x:Class="Kuromi.Views.Widgets.MediaView"
              x:DataType="vm:MediaViewModel">
     <Grid>
@@ -40,24 +41,24 @@
             <!-- Transport controls -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
                         VerticalAlignment="Center">
-                <Button Classes="icon" Width="36" Height="36" Command="{Binding PreviousCommand}">
+                <glass:GlassButton Classes="icon" Width="36" Height="36" Command="{Binding PreviousCommand}">
                     <controls:LucideIcon Kind="skip-back-solid" Filled="True" Width="17" Height="17"
                                          Brush="{DynamicResource TextPrimary}"/>
-                </Button>
-                <Button Width="42" Height="42" CornerRadius="21" Padding="0" BorderThickness="0"
+                </glass:GlassButton>
+                <glass:GlassButton Width="42" Height="42" CornerRadius="21" Padding="0" BorderThickness="0"
                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                        Background="{Binding Accent}" Command="{Binding PlayPauseCommand}">
+                        SurfaceColor="{Binding AccentColor}" Command="{Binding PlayPauseCommand}">
                     <Panel>
                         <controls:LucideIcon Kind="pause-solid" Filled="True" Width="18" Height="18"
                                              Brush="{Binding AccentForeground}" IsVisible="{Binding Playing}"/>
                         <controls:LucideIcon Kind="play-solid" Filled="True" Width="18" Height="18"
                                              Brush="{Binding AccentForeground}" IsVisible="{Binding !Playing}"/>
                     </Panel>
-                </Button>
-                <Button Classes="icon" Width="36" Height="36" Command="{Binding NextCommand}">
+                </glass:GlassButton>
+                <glass:GlassButton Classes="icon" Width="36" Height="36" Command="{Binding NextCommand}">
                     <controls:LucideIcon Kind="skip-forward-solid" Filled="True" Width="17" Height="17"
                                          Brush="{DynamicResource TextPrimary}"/>
-                </Button>
+                </glass:GlassButton>
             </StackPanel>
         </Grid>
     </Grid>

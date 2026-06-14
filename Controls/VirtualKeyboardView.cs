@@ -5,6 +5,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
+using Kuromi.Glass;
 
 namespace Kuromi.Controls;
 
@@ -19,6 +21,7 @@ public class VirtualKeyboardView : UserControl
     private bool _shift;
     private readonly List<Button> _letterKeys = new();
     private readonly List<LucideIcon> _icons = new();
+    private readonly List<GlassButton> _keys = new();
 
     public event Action? CloseRequested;
 
@@ -42,12 +45,25 @@ public class VirtualKeyboardView : UserControl
         border.Classes.Add("card");
         Content = border;
 
-        // Resolve theme-dependent icon colors once we're in the tree.
+        // Resolve theme-dependent icon colors + key frosting once we're in the tree.
         AttachedToVisualTree += (_, _) =>
         {
             if (this.TryFindResource("TextPrimary", out var v) && v is IBrush b)
                 foreach (var i in _icons) i.Brush = b;
+            ApplyKeyFrost();
         };
+        ActualThemeVariantChanged += (_, _) => ApplyKeyFrost();
+    }
+
+    // Frost the glass keys so they read as solid keys over the busy dashboard behind them
+    // (dark, light-text keys in dark mode; light, dark-text keys in light mode).
+    private void ApplyKeyFrost()
+    {
+        Color frost = ActualThemeVariant == ThemeVariant.Dark
+            ? Color.FromArgb(150, 18, 14, 26)
+            : Color.FromArgb(165, 255, 255, 255);
+        foreach (var k in _keys)
+            k.SurfaceColor = frost;
     }
 
     public void SetTarget(TextBox? tb) => _target = tb;
@@ -113,18 +129,36 @@ public class VirtualKeyboardView : UserControl
 
     // ---------------- keys ----------------
 
-    private static Button Key(string label) => new()
+    private Button Key(string label)
     {
-        Content = label,
-        Classes = { "key" },
-        Focusable = false,
-    };
+        var b = new GlassButton
+        {
+            Content = label,
+            Classes = { "key" },
+            Focusable = false,
+            ShadowEnabled = false,
+            BlurRadius = 6,
+            InteractiveMaxScaleDip = 2,
+        };
+        _keys.Add(b);
+        return b;
+    }
 
     private Button IconKey(string icon)
     {
         var ic = new LucideIcon { Kind = icon, Width = 20, Height = 20, Brush = Brushes.White };
         _icons.Add(ic);
-        return new Button { Content = ic, Classes = { "key" }, Focusable = false };
+        var b = new GlassButton
+        {
+            Content = ic,
+            Classes = { "key" },
+            Focusable = false,
+            ShadowEnabled = false,
+            BlurRadius = 6,
+            InteractiveMaxScaleDip = 2,
+        };
+        _keys.Add(b);
+        return b;
     }
 
     // ---------------- editing ----------------

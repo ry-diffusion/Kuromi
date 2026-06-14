@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Kuromi.ViewModels.Widgets"
              xmlns:controls="using:Kuromi.Controls"
+             xmlns:glass="using:Kuromi.Glass"
              x:Class="Kuromi.Views.Widgets.QuickActionsView"
              x:DataType="vm:QuickActionsViewModel">
     <Grid RowDefinitions="*,Auto">
@@ -15,7 +16,7 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:QuickActionItemViewModel">
                         <Panel Margin="5">
-                            <Button Classes="pill" HorizontalAlignment="Stretch" Height="84" Padding="6"
+                            <glass:GlassButton Classes="pill" HorizontalAlignment="Stretch" Height="84" Padding="6"
                                     Command="{Binding RunCommand}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                                     <controls:LucideIcon Kind="{Binding Glyph}" Width="26" Height="26"
@@ -24,8 +25,8 @@
                                     <TextBlock Text="{Binding Label}" FontSize="13"
                                                HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
-                            </Button>
-                            <Button Classes="icon" Width="28" Height="28"
+                            </glass:GlassButton>
+                            <glass:GlassButton Classes="icon" Width="28" Height="28"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
                                     Margin="0,-6,-6,0"
                                     IsVisible="{Binding $parent[ItemsControl].((vm:QuickActionsViewModel)DataContext).EditMode}"
@@ -33,7 +34,7 @@
                                     CommandParameter="{Binding}">
                                 <controls:LucideIcon Kind="x" Width="14" Height="14"
                                                      Brush="{DynamicResource TextPrimary}"/>
-                            </Button>
+                            </glass:GlassButton>
                         </Panel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -51,7 +52,7 @@
             <Grid ColumnDefinitions="*,Auto">
                 <TextBox Grid.Column="0" Classes="kuromi" Text="{Binding NewCommand}"
                          PlaceholderText="Comando shell (ex: gnome-control-center)" Margin="0,0,6,0"/>
-                <Button Grid.Column="1" Classes="pill accent" Content="Add"
+                <glass:GlassButton Grid.Column="1" Classes="pill accent" Content="Add"
                         Command="{Binding AddCommand}"/>
             </Grid>
         </StackPanel>

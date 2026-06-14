@@ -3,7 +3,7 @@
         xmlns:vm="using:Kuromi.ViewModels"
         xmlns:models="using:Kuromi.Models"
         xmlns:controls="using:Kuromi.Controls"
-        xmlns:lg="using:LiquidGlassAvaloniaUI"
+        xmlns:glass="using:Kuromi.Glass"
         x:Class="Kuromi.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Kuromi"
@@ -38,10 +38,10 @@
             </ItemsControl.Styles>
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:WidgetViewModel">
-                    <lg:LiquidGlassSurface Margin="9" CornerRadius="22"
-                                           BlurRadius="2" RefractionHeight="26" RefractionAmount="46"
-                                           ChromaticAberration="True" DepthEffect="True"
-                                           Vibrancy="1.2" SurfaceColor="{DynamicResource GlassSurfaceColor}">
+                    <glass:GlassSurface Margin="9" CornerRadius="22"
+                                        BlurRadius="2" RefractionHeight="32" RefractionAmount="72"
+                                        ChromaticAberration="True" DepthEffect="True"
+                                        Vibrancy="1.2" SurfaceColor="{DynamicResource GlassSurfaceColor}">
                         <DockPanel>
                             <!-- Header (drag handle in edit mode) -->
                             <Grid DockPanel.Dock="Top" Tag="drag" Height="40"
@@ -54,13 +54,13 @@
                                 <TextBlock Grid.Column="1" Classes="label" Margin="10,0,0,0"
                                            VerticalAlignment="Center" FontSize="14"
                                            Text="{Binding Title}"/>
-                                <Button Grid.Column="2" Classes="icon" Width="32" Height="32"
+                                <glass:GlassButton Grid.Column="2" Classes="icon" Width="32" Height="32"
                                         IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EditMode}"
                                         Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Dashboard.RemoveWidgetCommand}"
                                         CommandParameter="{Binding}">
                                     <controls:LucideIcon Kind="x" Width="16" Height="16"
                                                          Brush="{DynamicResource TextPrimary}"/>
-                                </Button>
+                                </glass:GlassButton>
                             </Grid>
 
                             <!-- Resize grip (bottom-right, edit mode) -->
@@ -77,7 +77,7 @@
 
                             <ContentControl Content="{Binding Content}" Margin="14,4,14,12"/>
                         </DockPanel>
-                    </lg:LiquidGlassSurface>
+                    </glass:GlassSurface>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
@@ -96,7 +96,7 @@
                                      VerticalAlignment="Center" Brush="#AAFFFFFF"/>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10"
                             VerticalAlignment="Center">
-                    <Button Classes="icon" Name="AddButton" IsVisible="{Binding EditMode}"
+                    <glass:GlassButton Classes="icon" Name="AddButton" IsVisible="{Binding EditMode}"
                             ToolTip.Tip="Adicionar widget">
                         <controls:LucideIcon Kind="plus" Width="20" Height="20" Brush="White"/>
                         <Button.Flyout>
@@ -105,7 +105,7 @@
                                               Width="220">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="models:WidgetKind">
-                                            <Button Classes="pill" Margin="0,3"
+                                            <glass:GlassButton Classes="pill" Margin="0,3"
                                                     HorizontalAlignment="Stretch"
                                                     HorizontalContentAlignment="Left"
                                                     Content="{Binding Converter={StaticResource WidgetKindToTitle}}"
@@ -116,18 +116,18 @@
                                 </ItemsControl>
                             </Flyout>
                         </Button.Flyout>
-                    </Button>
-                    <ToggleButton Classes="icon" IsChecked="{Binding EditMode, Mode=OneWay}"
+                    </glass:GlassButton>
+                    <glass:GlassToggleButton Classes="icon" IsChecked="{Binding EditMode, Mode=OneWay}"
                                   Command="{Binding ToggleEditCommand}" ToolTip.Tip="Editar layout">
                         <controls:LucideIcon Kind="pencil" Width="18" Height="18" Brush="White"/>
-                    </ToggleButton>
-                    <Button Classes="icon" Command="{Binding ToggleFullscreenCommand}"
+                    </glass:GlassToggleButton>
+                    <glass:GlassButton Classes="icon" Command="{Binding ToggleFullscreenCommand}"
                             ToolTip.Tip="Tela cheia (F11)">
                         <controls:LucideIcon Kind="maximize" Width="18" Height="18" Brush="White"/>
-                    </Button>
-                    <Button Classes="icon" Command="{Binding ExitCommand}" ToolTip.Tip="Fechar (Esc)">
+                    </glass:GlassButton>
+                    <glass:GlassButton Classes="icon" Command="{Binding ExitCommand}" ToolTip.Tip="Fechar (Esc)">
                         <controls:LucideIcon Kind="x" Width="18" Height="18" Brush="White"/>
-                    </Button>
+                    </glass:GlassButton>
                 </StackPanel>
             </Grid>
         </Border>

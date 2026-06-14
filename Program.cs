@@ -1,5 +1,5 @@
 ﻿using Avalonia;
-using LiquidGlassAvaloniaUI;
+using Kuromi.Glass;
 using System;
 
 namespace Kuromi;
@@ -21,6 +21,6 @@ sealed class Program
             .WithDeveloperTools()
 #endif
             .WithInterFont()
-            .UseLiquidGlassPerformanceDefaults()
+            .UseKuromiGlass()
             .LogToTrace();
 }

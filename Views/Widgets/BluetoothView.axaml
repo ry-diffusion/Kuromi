@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Kuromi.ViewModels.Widgets"
              xmlns:controls="using:Kuromi.Controls"
+             xmlns:glass="using:Kuromi.Glass"
              x:Class="Kuromi.Views.Widgets.BluetoothView"
              x:DataType="vm:BluetoothViewModel">
     <Grid>
@@ -12,18 +13,18 @@
         <Grid IsVisible="{Binding Available}" RowDefinitions="Auto,*">
             <!-- Controls -->
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,0,0,10">
-                <ToggleSwitch Grid.Column="0" IsChecked="{Binding Powered, Mode=OneWay}"
+                <glass:GlassSwitch Grid.Column="0" IsChecked="{Binding Powered, Mode=OneWay}"
                               Command="{Binding TogglePowerCommand}"
                               OnContent="Ligado" OffContent="Desligado"
                               VerticalAlignment="Center"/>
-                <Button Grid.Column="2" Classes="pill" Margin="6,0"
+                <glass:GlassButton Grid.Column="2" Classes="pill" Margin="6,0"
                         Command="{Binding ScanCommand}" IsEnabled="{Binding Powered}"
                         Content="Procurar"/>
-                <Button Grid.Column="3" Classes="icon" Width="44" Height="44"
+                <glass:GlassButton Grid.Column="3" Classes="icon" Width="44" Height="44"
                         Command="{Binding RefreshCommand}" IsEnabled="{Binding Powered}">
                     <controls:LucideIcon Kind="refresh-cw" Width="18" Height="18"
                                          Brush="{DynamicResource TextPrimary}"/>
-                </Button>
+                </glass:GlassButton>
             </Grid>
 
             <ScrollViewer Grid.Row="1">
@@ -58,14 +59,14 @@
                                                            Foreground="{DynamicResource AccentBrush}"/>
                                             </StackPanel>
                                         </StackPanel>
-                                        <Button Grid.Column="2" Classes="pill" MinHeight="40" Padding="14,8"
+                                        <glass:GlassButton Grid.Column="2" Classes="pill" MinHeight="40" Padding="14,8"
                                                 Command="{Binding $parent[ItemsControl].((vm:BluetoothViewModel)DataContext).ToggleCommand}"
                                                 CommandParameter="{Binding}">
                                             <Panel>
                                                 <TextBlock Text="Desconectar" IsVisible="{Binding Connected}"/>
                                                 <TextBlock Text="Conectar" IsVisible="{Binding !Connected}"/>
                                             </Panel>
-                                        </Button>
+                                        </glass:GlassButton>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

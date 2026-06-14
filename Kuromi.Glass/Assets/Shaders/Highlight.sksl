@@ -1,0 +1,39 @@
+// Kuromi.Glass — specular rim highlight.
+// Uses the SDF gradient as the surface normal and lights it from a direction.
+
+uniform float2 size;
+uniform float4 cornerRadii; // [topLeft, topRight, bottomRight, bottomLeft]
+uniform float4 color;       // RGBA (0..1, unpremultiplied)
+uniform float  angle;       // light direction, radians
+uniform float  falloff;     // >= 0
+
+float radiusAt(float2 c, float4 r) {
+    if (c.x >= 0.0) return (c.y < 0.0) ? r.y : r.z;
+    else            return (c.y < 0.0) ? r.x : r.w;
+}
+
+float2 gradRoundRect(float2 c, float2 hs, float radius) {
+    float2 q = abs(c) - (hs - radius);
+    if (q.x >= 0.0 || q.y >= 0.0) {
+        return sign(c) * normalize(max(q, 0.0));
+    }
+    float gx = step(q.y, q.x);
+    return sign(c) * float2(gx, 1.0 - gx);
+}
+
+half4 main(float2 coord) {
+    float2 hs = size * 0.5;
+    float2 cc = coord - hs;
+    float radius = radiusAt(cc, cornerRadii);
+
+    float gradRadius = min(radius * 1.5, min(hs.x, hs.y));
+    float2 grad = gradRoundRect(cc, hs, gradRadius);
+    float2 lightDir = float2(cos(angle), sin(angle));
+
+    float d = dot(grad, lightDir);
+    float intensity = pow(abs(d), max(falloff, 0.0));
+
+    // Skia expects premultiplied output.
+    half a = half(color.a * intensity);
+    return half4(half3(color.rgb) * a, a);
+}

@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Kuromi.ViewModels.Widgets"
              xmlns:controls="using:Kuromi.Controls"
+             xmlns:glass="using:Kuromi.Glass"
              x:Class="Kuromi.Views.Widgets.ClaudeUsageView"
              x:DataType="vm:ClaudeUsageViewModel">
     <ScrollViewer>
@@ -11,11 +12,11 @@
             <StackPanel IsVisible="{Binding HasQuota}" Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Text="Limites" Classes="label" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1" Classes="icon" Width="34" Height="34"
+                    <glass:GlassButton Grid.Column="1" Classes="icon" Width="34" Height="34"
                             Command="{Binding RefreshCommand}">
                         <controls:LucideIcon Kind="refresh-cw" Width="15" Height="15"
                                              Brush="{DynamicResource TextPrimary}"/>
-                    </Button>
+                    </glass:GlassButton>
                 </Grid>
                 <ItemsControl ItemsSource="{Binding Quotas}">
                     <ItemsControl.ItemTemplate>
@@ -42,7 +43,7 @@
 
             <StackPanel IsVisible="{Binding HasError}" Spacing="8">
                 <TextBlock Text="{Binding Error}" Classes="muted" TextWrapping="Wrap"/>
-                <Button Classes="pill" Content="Tentar de novo" Command="{Binding RefreshCommand}"
+                <glass:GlassButton Classes="pill" Content="Tentar de novo" Command="{Binding RefreshCommand}"
                         HorizontalAlignment="Left"/>
             </StackPanel>
 

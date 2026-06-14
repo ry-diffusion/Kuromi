@@ -42,6 +42,10 @@
     <SolidColorBrush x:Key="AccentBrush" Color="#FF7AB6"/>
     <SolidColorBrush x:Key="Accent2Brush" Color="#9B8CFF"/>
 
+    <!-- Translucent accent colors for glass tinting (overridden at runtime alongside the brushes) -->
+    <Color x:Key="AccentColor">#D7FF7AB6</Color>
+    <Color x:Key="Accent2Color">#D79B8CFF</Color>
+
     <!-- Fixed semantic brushes -->
     <SolidColorBrush x:Key="OnAccentBrush" Color="#1A1622"/>
     <SolidColorBrush x:Key="InfoBrush" Color="#7AD7FF"/>

@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Media;
 using MaterialColorUtilities.Palettes;
@@ -39,11 +40,12 @@ public static class MaterialPalette
                 ? new DarkSchemeMapper().Map(core)
                 : new LightSchemeMapper().Map(core);
 
+            Color accent = Vibrant(s.Primary);
             return new DynamicPalette(
-                Accent: C(s.Primary),
-                Secondary: C(s.Secondary),
-                Tertiary: C(s.Tertiary),
-                OnAccent: C(s.OnPrimary),
+                Accent: accent,
+                Secondary: Vibrant(s.Secondary),
+                Tertiary: Vibrant(s.Tertiary),
+                OnAccent: OnColor(accent),
                 TextPrimary: C(s.OnSurface),
                 TextSecondary: C(s.OnSurfaceVariant),
                 TextMuted: C(core.NeutralVariant[(uint)(dark ? 65 : 45)]));
@@ -55,4 +57,20 @@ public static class MaterialPalette
     }
 
     private static Color C(uint argb) => Color.FromUInt32(argb);
+
+    /// <summary>Push a Material tone toward a punchier, more saturated accent (the M3 tones are muted).</summary>
+    private static Color Vibrant(uint argb)
+    {
+        HslColor hsl = Color.FromUInt32(argb).ToHsl();
+        double s = Math.Min(1.0, hsl.S * 1.55 + 0.22);
+        double l = Math.Clamp(hsl.L, 0.52, 0.68);
+        return new HslColor(1.0, hsl.H, s, l).ToRgb();
+    }
+
+    /// <summary>Readable text colour to sit on top of <paramref name="c"/>.</summary>
+    private static Color OnColor(Color c)
+    {
+        double lum = (0.2126 * c.R + 0.7152 * c.G + 0.0722 * c.B) / 255.0;
+        return lum > 0.6 ? Color.FromRgb(0x1A, 0x16, 0x22) : Colors.White;
+    }
 }
