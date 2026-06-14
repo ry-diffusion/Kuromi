@@ -77,6 +77,40 @@
                 </StackPanel>
             </glass:GlassSurface>
 
+            <!-- Spotify -->
+            <glass:GlassSurface Classes="card">
+                <StackPanel Spacing="14">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <controls:LucideIcon Kind="music" Width="18" Height="18" VerticalAlignment="Center"
+                                             Brush="{DynamicResource AccentBrush}"/>
+                        <TextBlock Text="Spotify" Classes="label" FontSize="14" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Client ID" Foreground="{DynamicResource TextPrimary}"/>
+                        <TextBox Text="{Binding SpotifyClientId, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                 Watermark="cole o Client ID do app Spotify"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Redirect URI (adicione no painel do Spotify):" Classes="muted" FontSize="11"/>
+                        <SelectableTextBlock Text="{Binding SpotifyRedirectUri}" FontSize="12"
+                                             Foreground="{DynamicResource TextSecondary}"/>
+                    </StackPanel>
+
+                    <glass:GlassButton Classes="pill accent" HorizontalAlignment="Left" Padding="18,9"
+                                       Command="{Binding Spotify.ConnectCommand}"
+                                       IsVisible="{Binding !Spotify.IsAuthenticated}">
+                        <TextBlock Text="Conectar" FontWeight="SemiBold" Foreground="{DynamicResource OnAccentBrush}"/>
+                    </glass:GlassButton>
+                    <glass:GlassButton Classes="pill" HorizontalAlignment="Left" Padding="18,9"
+                                       Command="{Binding Spotify.DisconnectCommand}"
+                                       IsVisible="{Binding Spotify.IsAuthenticated}">
+                        <TextBlock Text="Desconectar" Foreground="{DynamicResource TextPrimary}"/>
+                    </glass:GlassButton>
+                </StackPanel>
+            </glass:GlassSurface>
+
             <!-- Vidro líquido — Lente -->
             <glass:GlassSurface Classes="card">
                 <StackPanel Spacing="16">

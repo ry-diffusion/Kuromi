@@ -1,0 +1,219 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Kuromi.ViewModels"
+             xmlns:controls="using:Kuromi.Controls"
+             xmlns:glass="using:Kuromi.Glass"
+             x:Class="Kuromi.Views.SpotifyView"
+             x:DataType="vm:SpotifyViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="glass|GlassSurface.panel">
+            <Setter Property="CornerRadius" Value="22"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="BlurRadius" Value="{DynamicResource GlassBlurRadius}"/>
+            <Setter Property="RefractionHeight" Value="{DynamicResource GlassRefractionHeight}"/>
+            <Setter Property="RefractionAmount" Value="{DynamicResource GlassRefractionAmount}"/>
+            <Setter Property="ChromaticAberration" Value="{DynamicResource GlassChromatic}"/>
+            <Setter Property="DepthEffect" Value="{DynamicResource GlassDepthEffect}"/>
+            <Setter Property="Vibrancy" Value="{DynamicResource GlassVibrancy}"/>
+            <Setter Property="HighlightOpacity" Value="{DynamicResource GlassHighlightOpacity}"/>
+            <Setter Property="ShadowEnabled" Value="{DynamicResource GlassShadowEnabled}"/>
+            <Setter Property="ShadowRadius" Value="{DynamicResource GlassShadowRadius}"/>
+            <Setter Property="SurfaceColor" Value="{DynamicResource GlassSurfaceColor}"/>
+        </Style>
+        <Style Selector="TextBlock.lyric">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Margin" Value="0,3"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="TextBlock.lyric.active">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="19"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Panel Margin="16,16,16,120">
+
+        <!-- Not configured -->
+        <StackPanel IsVisible="{Binding !HasClientId}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Spacing="12" MaxWidth="420">
+            <controls:LucideIcon Kind="music" Width="40" Height="40" HorizontalAlignment="Center"
+                                 Brush="{DynamicResource AccentBrush}"/>
+            <TextBlock Text="Configure o Client ID do Spotify em Ajustes" FontSize="16"
+                       HorizontalAlignment="Center" TextAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}"/>
+            <TextBlock Text="Crie um app em developer.spotify.com e cole o Client ID na aba Ajustes."
+                       Classes="muted" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- Configured but signed out -->
+        <StackPanel IsVisible="{Binding HasClientId}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Spacing="16" MaxWidth="360">
+            <StackPanel.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <Binding Path="HasClientId"/>
+                    <Binding Path="!IsAuthenticated"/>
+                </MultiBinding>
+            </StackPanel.IsVisible>
+            <controls:LucideIcon Kind="music" Width="44" Height="44" HorizontalAlignment="Center"
+                                 Brush="{DynamicResource AccentBrush}"/>
+            <TextBlock Text="Spotify" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center"
+                       Foreground="{DynamicResource TextPrimary}"/>
+            <glass:GlassButton Classes="pill accent" HorizontalAlignment="Center" Padding="22,12"
+                               Command="{Binding ConnectCommand}" IsEnabled="{Binding !Connecting}">
+                <TextBlock Text="Conectar ao Spotify" FontWeight="SemiBold"
+                           Foreground="{DynamicResource OnAccentBrush}"/>
+            </glass:GlassButton>
+            <TextBlock Text="Abrirá o navegador para autorizar." Classes="muted"
+                       HorizontalAlignment="Center" IsVisible="{Binding !Connecting}"/>
+            <TextBlock Text="Aguardando autorização no navegador…" Classes="muted"
+                       HorizontalAlignment="Center" IsVisible="{Binding Connecting}"/>
+        </StackPanel>
+
+        <!-- Signed in -->
+        <Grid IsVisible="{Binding IsAuthenticated}" ColumnDefinitions="380,*" ColumnSpacing="16">
+
+            <!-- Left: now playing + queue -->
+            <Grid Grid.Column="0" RowDefinitions="Auto,*" RowSpacing="16">
+                <glass:GlassSurface Grid.Row="0" Classes="panel">
+                    <StackPanel Spacing="14">
+                        <Border CornerRadius="14" ClipToBounds="True" Width="300" Height="300"
+                                HorizontalAlignment="Center" Background="{DynamicResource RowFill}">
+                            <Panel>
+                                <controls:LucideIcon Kind="music" Width="48" Height="48"
+                                                     IsVisible="{Binding !HasTrack}"
+                                                     Brush="{DynamicResource TextMuted}"/>
+                                <Image Source="{Binding Art}" Stretch="UniformToFill"/>
+                            </Panel>
+                        </Border>
+
+                        <StackPanel Spacing="2" IsVisible="{Binding HasTrack}">
+                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding Artist}" Classes="muted" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4" IsVisible="{Binding HasTrack}">
+                            <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" Height="4"
+                                         Foreground="{DynamicResource AccentBrush}"/>
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding PositionText}" Classes="muted" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="{Binding DurationText}" Classes="muted" FontSize="11"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                            <glass:GlassButton Classes="icon" Width="40" Height="40" Command="{Binding PreviousCommand}">
+                                <controls:LucideIcon Kind="skip-back-solid" Filled="True" Width="18" Height="18"
+                                                     Brush="{DynamicResource TextPrimary}"/>
+                            </glass:GlassButton>
+                            <glass:GlassButton Width="52" Height="52" CornerRadius="26" Padding="0" BorderThickness="0"
+                                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                    SurfaceColor="{DynamicResource AccentColor}" Command="{Binding PlayPauseCommand}">
+                                <Panel>
+                                    <controls:LucideIcon Kind="pause-solid" Filled="True" Width="20" Height="20"
+                                                         Brush="{DynamicResource OnAccentBrush}" IsVisible="{Binding IsPlaying}"/>
+                                    <controls:LucideIcon Kind="play-solid" Filled="True" Width="20" Height="20"
+                                                         Brush="{DynamicResource OnAccentBrush}" IsVisible="{Binding !IsPlaying}"/>
+                                </Panel>
+                            </glass:GlassButton>
+                            <glass:GlassButton Classes="icon" Width="40" Height="40" Command="{Binding NextCommand}">
+                                <controls:LucideIcon Kind="skip-forward-solid" Filled="True" Width="18" Height="18"
+                                                     Brush="{DynamicResource TextPrimary}"/>
+                            </glass:GlassButton>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center"
+                                    IsVisible="{Binding HasTrack}">
+                            <controls:LucideIcon Kind="speaker" Width="14" Height="14" VerticalAlignment="Center"
+                                                 Brush="{DynamicResource TextMuted}"/>
+                            <TextBlock Text="{Binding DeviceName}" Classes="muted" FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </glass:GlassSurface>
+
+                <!-- Queue -->
+                <glass:GlassSurface Grid.Row="1" Classes="panel">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Fila" Classes="label" FontSize="14" Margin="0,0,0,10"/>
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Queue}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SpotifyTrackViewModel">
+                                        <StackPanel Spacing="0" Margin="0,5">
+                                            <TextBlock Text="{Binding Title}" Foreground="{DynamicResource TextPrimary}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Artist}" Classes="muted" FontSize="11"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </glass:GlassSurface>
+            </Grid>
+
+            <!-- Right: lyrics + playlists -->
+            <Grid Grid.Column="1" RowDefinitions="*,Auto" RowSpacing="16">
+                <glass:GlassSurface Grid.Row="0" Classes="panel">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Letra" Classes="label" FontSize="14" Margin="0,0,0,10"/>
+                        <TextBlock DockPanel.Dock="Top" Text="Sem letra para esta música" Classes="muted"
+                                   IsVisible="{Binding !HasLyrics}"/>
+                        <ScrollViewer Name="LyricsScroll" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Lyrics}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:LyricLineViewModel">
+                                        <TextBlock Classes="lyric" Classes.active="{Binding Active}" Text="{Binding Text}"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </glass:GlassSurface>
+
+                <!-- Playlists -->
+                <glass:GlassSurface Grid.Row="1" Classes="panel">
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                            <TextBlock Text="Playlists" Classes="label" FontSize="14"/>
+                            <glass:GlassButton Grid.Column="1" Classes="icon" Width="30" Height="30"
+                                               Command="{Binding RefreshCommand}">
+                                <controls:LucideIcon Kind="refresh-cw" Width="14" Height="14"
+                                                     Brush="{DynamicResource TextMuted}"/>
+                            </glass:GlassButton>
+                        </Grid>
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding Playlists}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="12"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SpotifyPlaylistViewModel">
+                                        <glass:GlassButton Width="132" Padding="8" CornerRadius="14"
+                                                Command="{Binding $parent[ItemsControl].((vm:SpotifyViewModel)DataContext).PlayPlaylistCommand}"
+                                                CommandParameter="{Binding}">
+                                            <StackPanel Spacing="6">
+                                                <Border CornerRadius="10" ClipToBounds="True" Width="116" Height="116"
+                                                        Background="{DynamicResource RowFill}">
+                                                    <Image Source="{Binding Art}" Stretch="UniformToFill"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextPrimary}"
+                                                           FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="116"/>
+                                            </StackPanel>
+                                        </glass:GlassButton>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </glass:GlassSurface>
+            </Grid>
+        </Grid>
+    </Panel>
+</UserControl>

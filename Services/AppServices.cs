@@ -19,6 +19,8 @@ public class AppServices
     public MediaService Media { get; }
     public ReminderService Reminders { get; }
     public BluetoothService Bluetooth { get; }
+    public SpotifyService Spotify { get; }
+    public LyricsService Lyrics { get; }
 
     public AppServices()
     {
@@ -33,5 +35,7 @@ public class AppServices
         Media = new MediaService();
         Reminders = new ReminderService(Config);
         Bluetooth = new BluetoothService();
+        Spotify = new SpotifyService(Config);
+        Lyrics = new LyricsService();
     }
 }

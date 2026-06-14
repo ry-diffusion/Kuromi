@@ -61,6 +61,9 @@ public class KuromiConfig
     /// <summary>Derive accent colors from the wallpaper.</summary>
     public bool AccentFromWallpaper { get; set; } = true;
 
+    /// <summary>Spotify app Client ID (PKCE flow; set in Ajustes). Redirect URI: http://127.0.0.1:5543/callback</summary>
+    public string SpotifyClientId { get; set; } = "";
+
     // --- Liquid-glass tuning (live-adjustable from Ajustes; the cards bind via DynamicResource) ---
     public double GlassRefraction { get; set; } = 72;       // RefractionAmount
     public double GlassRefractionHeight { get; set; } = 32; // RefractionHeight

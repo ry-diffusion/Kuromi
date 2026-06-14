@@ -31,7 +31,13 @@ public partial class MainWindowViewModel : ViewModelBase
     // --- Tabs / navigation (liquid-glass bottom tab bar) ---
     [ObservableProperty] private int _selectedTabIndex;
     public bool ShowDashboard => SelectedTabIndex == 0;
-    public bool ShowSettings => SelectedTabIndex == 1;
+    public bool ShowSpotify => SelectedTabIndex == 1;
+    public bool ShowSettings => SelectedTabIndex == 2;
+
+    /// <summary>The Spotify panel view-model (PKCE auth, playback, lyrics).</summary>
+    public SpotifyViewModel Spotify { get; }
+    [ObservableProperty] private string _spotifyClientId = "";
+    public string SpotifyRedirectUri => Services.SpotifyService.RedirectUri;
 
     // --- Settings (the "Ajustes" tab) ---
     private bool _settingsLoading = true;
@@ -88,6 +94,13 @@ public partial class MainWindowViewModel : ViewModelBase
         _ = LoadWallpaperAsync();
         _ = InitSettingsAsync();
 
+        // Spotify panel: hand the configured Client ID to the service, build the VM, then try a silent
+        // sign-in from the persisted token.
+        _services.Spotify.SetClientId(_config.SpotifyClientId);
+        Spotify = new SpotifyViewModel(_services.Spotify, _services.Lyrics);
+        _spotifyClientId = _config.SpotifyClientId;
+        _ = _services.Spotify.InitAsync();
+
         // Reload the wallpaper + accent when the system wallpaper/theme changes.
         _wallpaperDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
         _wallpaperDebounce.Tick += (_, _) => { _wallpaperDebounce.Stop(); _ = LoadWallpaperAsync(); };
@@ -112,7 +125,20 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnSelectedTabIndexChanged(int value)
     {
         OnPropertyChanged(nameof(ShowDashboard));
+        OnPropertyChanged(nameof(ShowSpotify));
         OnPropertyChanged(nameof(ShowSettings));
+        if (ShowSpotify) Spotify.Activate();
+        else Spotify.Deactivate();
+    }
+
+    partial void OnSpotifyClientIdChanged(string value)
+    {
+        if (_settingsLoading) return;
+        _config.SpotifyClientId = value?.Trim() ?? "";
+        _services.Spotify.SetClientId(_config.SpotifyClientId);
+        Spotify.RefreshClientId();
+        ScheduleSave();
+        _ = _services.Spotify.InitAsync();
     }
 
     private async Task InitSettingsAsync()

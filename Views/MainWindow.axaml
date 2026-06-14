@@ -93,6 +93,10 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
+        <!-- ===== Spotify panel ===== -->
+        <views:SpotifyView DataContext="{Binding Spotify}"
+                           IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowSpotify}"/>
+
         <!-- ===== Settings page (Ajustes tab) ===== -->
         <views:SettingsView IsVisible="{Binding ShowSettings}"/>
 
@@ -152,6 +156,7 @@
                               SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
             <controls:GlassTabBar.Tabs>
                 <controls:GlassTabItem Icon="layout-grid" Label="Painel"/>
+                <controls:GlassTabItem Icon="music" Label="Spotify"/>
                 <controls:GlassTabItem Icon="settings" Label="Ajustes"/>
             </controls:GlassTabBar.Tabs>
         </controls:GlassTabBar>
