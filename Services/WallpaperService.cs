@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Kuromi.Logging;
 using Kuromi.Services.Desktop;
 
 namespace Kuromi.Services;
@@ -22,18 +24,27 @@ public class WallpaperService
         { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp", ".ico" };
 
     private readonly IDesktopBackend _backend;
+    private static readonly ILog Logger = Log.For<WallpaperService>();
 
     public WallpaperService(IDesktopBackend backend) => _backend = backend;
 
     public async Task<string?> GetUsableWallpaperAsync(bool preferDark)
     {
         var src = await _backend.GetWallpaperPathAsync(preferDark);
-        if (src == null || !File.Exists(src)) return null;
+        if (src == null || !File.Exists(src))
+        {
+            Logger.Warn($"wallpaper source not found ({src ?? "null"})");
+            return null;
+        }
 
         var ext = Path.GetExtension(src).ToLowerInvariant();
         if (Array.IndexOf(SkiaReadable, ext) >= 0)
+        {
+            Logger.Debug($"wallpaper ready: {src}");
             return src;
+        }
 
+        Logger.Info($"wallpaper {ext} needs transcoding: {src}");
         return await TranscodeAsync(src);
     }
 
@@ -44,9 +55,14 @@ public class WallpaperService
             var info = new FileInfo(src);
             var key = Hash($"{src}:{info.LastWriteTimeUtc.Ticks}:{info.Length}");
             var outPath = Path.Combine(ConfigService.CacheDir, $"wallpaper-{key}.png");
-            if (File.Exists(outPath)) return outPath;
+            if (File.Exists(outPath))
+            {
+                Logger.Debug("wallpaper transcode: cache hit");
+                return outPath;
+            }
 
             var ext = Path.GetExtension(src).ToLowerInvariant();
+            var sw = Stopwatch.StartNew();
 
             // ImageMagick reads jxl/heic/avif/webp and lets us cap the size so the
             // blur pass stays cheap (the '>' only shrinks images larger than the box).
@@ -54,22 +70,36 @@ public class WallpaperService
             {
                 var r = await ShellRunner.RunAsync("magick",
                     new[] { src, "-resize", "2560x2560>", outPath }, timeoutMs: 45000);
-                if (r.Success && File.Exists(outPath)) return outPath;
+                if (r.Success && File.Exists(outPath))
+                {
+                    Logger.Info($"wallpaper transcoded {ext}→png via magick in {sw.ElapsedMilliseconds}ms");
+                    return outPath;
+                }
             }
 
             if (ext == ".jxl" && ShellRunner.Exists("djxl"))
             {
                 var r = await ShellRunner.RunAsync("djxl", new[] { src, outPath }, timeoutMs: 30000);
-                if (r.Success && File.Exists(outPath)) return outPath;
+                if (r.Success && File.Exists(outPath))
+                {
+                    Logger.Info($"wallpaper transcoded jxl→png via djxl in {sw.ElapsedMilliseconds}ms");
+                    return outPath;
+                }
             }
 
             if ((ext == ".heic" || ext == ".heif") && ShellRunner.Exists("heif-convert"))
             {
                 var r = await ShellRunner.RunAsync("heif-convert", new[] { src, outPath }, timeoutMs: 30000);
-                if (r.Success && File.Exists(outPath)) return outPath;
+                if (r.Success && File.Exists(outPath))
+                {
+                    Logger.Info($"wallpaper transcoded {ext}→png via heif-convert in {sw.ElapsedMilliseconds}ms");
+                    return outPath;
+                }
             }
+
+            Logger.Warn($"wallpaper transcode failed for {ext} (no working converter?)");
         }
-        catch { /* ignore */ }
+        catch (Exception ex) { Logger.Warn("wallpaper transcode error", ex); }
         return null;
     }
 

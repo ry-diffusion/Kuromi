@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kuromi.Logging;
 using Kuromi.Models;
 using Kuromi.Services.Desktop;
 
@@ -13,6 +14,7 @@ namespace Kuromi.ViewModels.Widgets;
 public partial class SystemControlsViewModel : ViewModelBase, IDisposable
 {
     private readonly IDesktopBackend _backend;
+    private readonly ILog _log = Log.For<SystemControlsViewModel>();
     private bool _loading = true;
 
     private readonly IDisposable? _audioWatch;
@@ -86,6 +88,7 @@ public partial class SystemControlsViewModel : ViewModelBase, IDisposable
     partial void OnSelectedOutputChanged(AudioSink? value)
     {
         if (_loading || value == null) return;
+        _log.Info($"audio output changed: {value.Description}");
         _ = _backend.SetDefaultOutputAsync(value.Name);
     }
 
@@ -104,6 +107,7 @@ public partial class SystemControlsViewModel : ViewModelBase, IDisposable
     partial void OnMutedChanged(bool value)
     {
         if (_loading) return;
+        _log.Info($"mute {(value ? "on" : "off")}");
         _ = _backend.SetMutedAsync(value);
     }
 
@@ -115,6 +119,7 @@ public partial class SystemControlsViewModel : ViewModelBase, IDisposable
 
     private async Task ApplyDarkAsync(bool value)
     {
+        _log.Info($"dark mode {(value ? "on" : "off")}");
         await _backend.SetDarkModeAsync(value);
         await Task.Delay(300);
         WallpaperShouldRefresh?.Invoke();

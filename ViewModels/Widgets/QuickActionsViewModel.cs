@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kuromi.Logging;
 using Kuromi.Models;
 using Kuromi.Services;
 
@@ -10,6 +11,8 @@ namespace Kuromi.ViewModels.Widgets;
 
 public partial class QuickActionItemViewModel : ObservableObject
 {
+    private static readonly ILog Logger = Log.For("QuickAction");
+
     public QuickAction Model { get; }
     public QuickActionItemViewModel(QuickAction model) => Model = model;
 
@@ -21,6 +24,7 @@ public partial class QuickActionItemViewModel : ObservableObject
     private void Run()
     {
         if (string.IsNullOrWhiteSpace(Model.Command)) return;
+        Logger.Info($"action ran: {Model.Label} → {Model.Command}");
         _ = ShellRunner.RunAsync("sh", new[] { "-c", Model.Command }, timeoutMs: 4000);
     }
 }

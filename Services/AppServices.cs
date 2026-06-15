@@ -1,3 +1,4 @@
+using Kuromi.Logging;
 using Kuromi.Services.Desktop;
 
 namespace Kuromi.Services;
@@ -24,8 +25,11 @@ public class AppServices
 
     public AppServices()
     {
+        var log = Log.For<AppServices>();
+        log.Info("composing services");
         Config = new ConfigService();
         Desktop = DesktopBackends.Detect();
+        log.Info($"desktop backend: {Desktop.Name}");
         Wallpaper = new WallpaperService(Desktop);
         Monitor = new SystemMonitorService();
         Icons = new IconResolver();
@@ -37,5 +41,6 @@ public class AppServices
         Bluetooth = new BluetoothService();
         Spotify = new SpotifyService(Config);
         Lyrics = new LyricsService();
+        log.Info("services ready");
     }
 }

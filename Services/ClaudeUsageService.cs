@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Kuromi.Logging;
 using Kuromi.Models;
 
 namespace Kuromi.Services;
@@ -18,6 +20,7 @@ public class ClaudeUsageService
         PropertyNameCaseInsensitive = true,
     };
 
+    private readonly ILog _log = Log.For<ClaudeUsageService>();
     private (string bin, string[] prefix)? _runner;
 
     private (string bin, string[] prefix) ResolveRunner()
@@ -33,6 +36,7 @@ public class ClaudeUsageService
     public async Task<ClaudeUsage> FetchAsync()
     {
         var usage = new ClaudeUsage();
+        var sw = Stopwatch.StartNew();
         try
         {
             var (bin, prefix) = ResolveRunner();
@@ -47,6 +51,7 @@ public class ClaudeUsageService
             if (!blocksRes.Success && string.IsNullOrWhiteSpace(blocksRes.StdOut))
             {
                 usage.Error = "ccusage indisponível";
+                _log.Warn($"ccusage unavailable (took {sw.ElapsedMilliseconds}ms)");
                 return usage;
             }
 
@@ -57,10 +62,12 @@ public class ClaudeUsageService
             ParseDaily(dailyRes.StdOut, usage);
 
             usage.HasData = true;
+            _log.Info($"cc usage read in {sw.ElapsedMilliseconds}ms (block ${usage.ActiveCostUsd:0.00}, {usage.ActiveTokens} tk)");
         }
         catch (Exception ex)
         {
             usage.Error = ex.Message;
+            _log.Warn($"cc usage read failed after {sw.ElapsedMilliseconds}ms", ex);
         }
         return usage;
     }

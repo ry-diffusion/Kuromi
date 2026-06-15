@@ -12,13 +12,17 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
-  <!-- Kuromi.Glass is a referenced project nested in the repo; don't compile its sources into the app too. -->
+  <!-- Nested referenced projects: don't compile their sources into the app too. -->
   <ItemGroup>
     <Compile Remove="Kuromi.Glass\**" />
     <AvaloniaXaml Remove="Kuromi.Glass\**" />
     <AvaloniaResource Remove="Kuromi.Glass\**" />
     <EmbeddedResource Remove="Kuromi.Glass\**" />
     <None Remove="Kuromi.Glass\**" />
+    <Compile Remove="Kuromi.Logging\**" />
+    <AvaloniaResource Remove="Kuromi.Logging\**" />
+    <EmbeddedResource Remove="Kuromi.Logging\**" />
+    <None Remove="Kuromi.Logging\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,5 +43,6 @@
 
   <ItemGroup>
     <ProjectReference Include="Kuromi.Glass\Kuromi.Glass.csproj" />
+    <ProjectReference Include="Kuromi.Logging\Kuromi.Logging.csproj" />
   </ItemGroup>
 </Project>

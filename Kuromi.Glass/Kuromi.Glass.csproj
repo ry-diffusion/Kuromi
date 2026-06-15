@@ -18,4 +18,8 @@
     <AvaloniaResource Include="Assets/Shaders/*.sksl" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Kuromi.Logging/Kuromi.Logging.csproj" />
+  </ItemGroup>
+
 </Project>

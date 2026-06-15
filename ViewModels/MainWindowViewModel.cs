@@ -9,6 +9,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Kuromi.Logging;
 using Kuromi.Models;
 using Kuromi.Services;
 
@@ -18,6 +19,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly AppServices _services;
     private readonly KuromiConfig _config;
+    private readonly ILog _log = Log.For<MainWindowViewModel>();
 
     public DashboardViewModel Dashboard { get; }
 
@@ -339,14 +341,15 @@ public partial class MainWindowViewModel : ViewModelBase
             // Follow the system theme: light scheme -> light wallpaper, dark -> dark.
             var preferDark = await _services.Desktop.GetDarkModeAsync();
             var path = await _services.Wallpaper.GetUsableWallpaperAsync(preferDark);
-            if (path == null) return;
+            if (path == null) { _log.Warn("wallpaper: no usable wallpaper found"); return; }
             var bmp = await Task.Run(() => new Bitmap(path));
             Wallpaper = bmp;
+            _log.Debug($"wallpaper loaded ({(preferDark ? "dark" : "light")})");
 
             if (AccentSource == AccentSource.Wallpaper)
                 await ApplyAccentAsync(path, preferDark);
         }
-        catch { /* keep previous / none */ }
+        catch (Exception ex) { _log.Warn("wallpaper load failed", ex); }
     }
 
     /// <summary>
@@ -365,14 +368,22 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var art = Spotify.Art;
         if (art is null) return;
-        var dark = await _services.Desktop.GetDarkModeAsync();
-        var palette = await Task.Run(() =>
+        try
         {
-            using var ms = new MemoryStream();
-            art.Save(ms);
-            return MaterialPalette.FromBytes(ms.ToArray(), dark);
-        });
-        if (palette is { } p) PushAccent(p);
+            var dark = await _services.Desktop.GetDarkModeAsync();
+            var palette = await Task.Run(() =>
+            {
+                using var ms = new MemoryStream();
+                art.Save(ms);
+                return MaterialPalette.FromBytes(ms.ToArray(), dark);
+            });
+            if (palette is { } p)
+            {
+                PushAccent(p);
+                _log.Debug("accent: derived from album cover");
+            }
+        }
+        catch (Exception ex) { _log.Warn("accent: deriving from cover failed", ex); }
     }
 
     /// <summary>Push a Material You scheme into the app resources (accent + harmonized text colors).</summary>

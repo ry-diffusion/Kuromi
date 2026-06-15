@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Kuromi.Logging;
 
 namespace Kuromi.Glass.Rendering;
 
@@ -21,9 +22,11 @@ internal sealed class GlassPressDriver
     private readonly Func<double> _maxScaleDip;
     private readonly GlassPressInteraction _press = new();
     private readonly DispatcherTimer _timer;
+    private readonly DispatcherTimer _watchdog;
 
     private const int ElevatedZ = 1000; // draw above siblings while pressed so the scale-up isn't covered
 
+    private readonly ILog _log = Log.For<GlassPressDriver>();
     private DateTime _lastTick;
     private int? _activePointerId;
     private TopLevel? _hooked;
@@ -38,6 +41,18 @@ internal sealed class GlassPressDriver
         _owner.RenderTransformOrigin = RelativePoint.Center;
         _timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
         _timer.Tick += OnTick;
+
+        // Backstop: if a release is ever missed (e.g. pressing a button that launches an app or suspends
+        // steals focus before PointerReleased arrives), force the press to end so the lens never sticks.
+        _watchdog = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2.5) };
+        _watchdog.Tick += (_, _) =>
+        {
+            _watchdog.Stop();
+            if (_activePointerId is null)
+                return;
+            _log.Warn($"press watchdog fired on {_owner.GetType().Name} — forcing release (missed pointer-up)");
+            End();
+        };
 
         _owner.AddHandler(InputElement.PointerPressedEvent, OnSelfPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         _owner.DetachedFromVisualTree += OnOwnerDetached;
@@ -88,6 +103,8 @@ internal sealed class GlassPressDriver
         Apply();
         _owner.InvalidateVisual();
         Start();
+        _watchdog.Stop();
+        _watchdog.Start();
     }
 
     private void OnMoved(object? sender, PointerEventArgs e)
@@ -115,6 +132,7 @@ internal sealed class GlassPressDriver
 
     private void End()
     {
+        _watchdog.Stop();
         _activePointerId = null;
         _lens?.Hide();
         Unhook();
@@ -134,6 +152,9 @@ internal sealed class GlassPressDriver
         _hooked.AddHandler(InputElement.PointerMovedEvent, OnMoved, RoutingStrategies.Tunnel, true);
         _hooked.AddHandler(InputElement.PointerReleasedEvent, OnReleased, RoutingStrategies.Tunnel, true);
         _hooked.AddHandler(InputElement.PointerCaptureLostEvent, OnCaptureLost, RoutingStrategies.Tunnel, true);
+        // Losing window focus (launched app / suspend) means the release will never arrive — end now.
+        if (_hooked is Window win)
+            win.Deactivated += OnHostDeactivated;
     }
 
     private void Unhook()
@@ -143,7 +164,17 @@ internal sealed class GlassPressDriver
         _hooked.RemoveHandler(InputElement.PointerMovedEvent, OnMoved);
         _hooked.RemoveHandler(InputElement.PointerReleasedEvent, OnReleased);
         _hooked.RemoveHandler(InputElement.PointerCaptureLostEvent, OnCaptureLost);
+        if (_hooked is Window win)
+            win.Deactivated -= OnHostDeactivated;
         _hooked = null;
+    }
+
+    private void OnHostDeactivated(object? sender, EventArgs e)
+    {
+        if (_activePointerId is null)
+            return;
+        _log.Debug($"window lost focus while pressing {_owner.GetType().Name} — ending press");
+        End();
     }
 
     private void Apply()
@@ -160,6 +191,7 @@ internal sealed class GlassPressDriver
         _lens?.Cancel();
         Unhook();
         _timer.Stop();
+        _watchdog.Stop();
     }
 
     private FloatingLens EnsureLens()

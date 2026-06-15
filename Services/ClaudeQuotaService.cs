@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Kuromi.Logging;
 using Kuromi.Models;
 
 namespace Kuromi.Services;
@@ -18,6 +20,7 @@ public class ClaudeQuotaService
     private const string UsageUrl = "https://api.anthropic.com/api/oauth/usage";
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
+    private readonly ILog _log = Log.For<ClaudeQuotaService>();
 
     private static string CredentialsPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -29,7 +32,11 @@ public class ClaudeQuotaService
         try
         {
             var token = ReadToken();
-            if (string.IsNullOrEmpty(token)) return result;
+            if (string.IsNullOrEmpty(token))
+            {
+                _log.Debug("claude quota: no token (~/.claude/.credentials.json)");
+                return result;
+            }
 
             using var req = new HttpRequestMessage(HttpMethod.Get, UsageUrl);
             req.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token}");
@@ -37,7 +44,11 @@ public class ClaudeQuotaService
             req.Headers.TryAddWithoutValidation("User-Agent", "claude-code/2.0.37");
 
             using var resp = await Http.SendAsync(req).ConfigureAwait(false);
-            if (!resp.IsSuccessStatusCode) return result;
+            if (!resp.IsSuccessStatusCode)
+            {
+                _log.Warn($"claude quota: HTTP {(int)resp.StatusCode} {resp.StatusCode}");
+                return result;
+            }
 
             var json = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
             using var doc = JsonDocument.Parse(json);
@@ -47,8 +58,9 @@ public class ClaudeQuotaService
             Add(root, "seven_day", "7 dias", result);
             Add(root, "seven_day_sonnet", "7 dias · Sonnet", result);
             Add(root, "seven_day_opus", "7 dias · Opus", result);
+            _log.Info($"claude limits updated: {string.Join(", ", result.Select(r => $"{r.Label} {r.Utilization:0}%"))}");
         }
-        catch { /* offline / token expired -> empty */ }
+        catch (Exception ex) { _log.Warn("claude quota fetch failed", ex); }
         return result;
     }
 

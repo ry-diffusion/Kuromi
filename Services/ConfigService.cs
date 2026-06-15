@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Kuromi.Logging;
 using Kuromi.Models;
 
 namespace Kuromi.Services;
@@ -10,6 +11,8 @@ namespace Kuromi.Services;
 /// <summary>Loads and saves <see cref="KuromiConfig"/> under XDG config dir.</summary>
 public class ConfigService
 {
+    private readonly ILog _log = Log.For<ConfigService>();
+
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         WriteIndented = true,
@@ -63,12 +66,14 @@ public class ConfigService
                     changed |= MigrateScreenshotCommand(cfg);
                     changed |= CompactMediaLayout(cfg);
                     if (changed) Save(cfg);
+                    _log.Info($"config loaded ({cfg.Widgets.Count} widgets)");
                     return cfg;
                 }
             }
         }
-        catch { /* fall through to default */ }
+        catch (Exception ex) { _log.Warn("config load failed, falling back to default", ex); }
 
+        _log.Info("creating default config");
         var def = KuromiConfig.CreateDefault();
         Save(def);
         return def;
@@ -134,7 +139,7 @@ public class ConfigService
             Directory.CreateDirectory(ConfigDir);
             File.WriteAllText(ConfigPath, JsonSerializer.Serialize(cfg, JsonOpts));
         }
-        catch { /* ignore persistence errors */ }
+        catch (Exception ex) { _log.Warn("config save failed", ex); }
     }
 
     /// <summary>

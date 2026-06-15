@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Kuromi.Logging;
 using SkiaSharp;
 
 namespace Kuromi.Glass.Rendering;
@@ -12,8 +13,12 @@ namespace Kuromi.Glass.Rendering;
 /// </summary>
 internal static class GlassSurfacePool
 {
-    private const int MaxTotal = 24;
+    private const int MaxTotal = 48; // many glass surfaces of distinct sizes; 24 thrashed the big ones
     private const int MaxPerSize = 3;
+
+    // Pool runs on the render thread. Creates/evicts/clears are logged at Debug (infrequent in steady
+    // state); per-frame reuse/return are Trace (off by default, guarded so they allocate nothing).
+    private static readonly ILog Logger = Log.For("Glass.Pool");
 
     [ThreadStatic] private static Dictionary<long, Stack<SKSurface>>? t_pool;
     [ThreadStatic] private static int t_ctxId;
@@ -35,11 +40,17 @@ internal static class GlassSurfacePool
             SKSurface reused = stack.Pop();
             t_count--;
             reused.Canvas.Clear(SKColors.Transparent);
+            if (Logger.IsEnabled(LogLevel.Trace))
+                Logger.Trace($"reuse {info.Width}x{info.Height}px (pooled={t_count})");
             return reused;
         }
 
         SKSurface? created = ctx is not null ? SKSurface.Create(ctx, false, info) : null;
         created ??= SKSurface.Create(info);
+        if (created is null)
+            Logger.Warn($"failed to create pool surface {info.Width}x{info.Height}px");
+        else if (Logger.IsEnabled(LogLevel.Trace))
+            Logger.Trace($"create {info.Width}x{info.Height}px (pooled={t_count})");
         return created;
     }
 
@@ -48,6 +59,8 @@ internal static class GlassSurfacePool
         if (t_pool is null || t_count >= MaxTotal)
         {
             surface.Dispose();
+            if (t_pool is not null && Logger.IsEnabled(LogLevel.Trace))
+                Logger.Trace($"evict {info.Width}x{info.Height}px (total cap {MaxTotal})");
             return;
         }
 
@@ -61,22 +74,32 @@ internal static class GlassSurfacePool
         if (stack.Count >= MaxPerSize)
         {
             surface.Dispose();
+            if (Logger.IsEnabled(LogLevel.Trace))
+                Logger.Trace($"evict {info.Width}x{info.Height}px (per-size cap {MaxPerSize})");
             return;
         }
 
         stack.Push(surface);
         t_count++;
+        if (Logger.IsEnabled(LogLevel.Trace))
+            Logger.Trace($"return {info.Width}x{info.Height}px (pooled={t_count})");
     }
 
     private static void Clear()
     {
         if (t_pool is null)
             return;
+        int disposed = 0;
         foreach (Stack<SKSurface> stack in t_pool.Values)
             foreach (SKSurface surface in stack)
+            {
                 surface.Dispose();
+                disposed++;
+            }
         t_pool.Clear();
         t_count = 0;
+        if (disposed > 0)
+            Logger.Debug($"cleared {disposed} pooled surfaces (GR context changed)");
     }
 
     private static long Key(int w, int h) => ((long)w << 32) | (uint)h;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Kuromi.Logging;
 using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
 
@@ -22,6 +23,7 @@ public class SpotifyService
     private static string TokenPath => Path.Combine(ConfigService.ConfigDir, "spotify-token.json");
 
     private readonly ConfigService _config;
+    private readonly ILog _log = Log.For<SpotifyService>();
     private string? _clientId;
     private SpotifyClient? _client;
     private EmbedIOAuthServer? _server;
@@ -36,32 +38,51 @@ public class SpotifyService
     /// <summary>Raised when sign-in/out completes (may fire off the UI thread).</summary>
     public event Action? StateChanged;
 
-    public void SetClientId(string? id) => _clientId = string.IsNullOrWhiteSpace(id) ? null : id.Trim();
+    public void SetClientId(string? id)
+    {
+        _clientId = string.IsNullOrWhiteSpace(id) ? null : id.Trim();
+        _log.Debug(_clientId is null ? "client id cleared" : "client id set");
+    }
 
     /// <summary>Load a persisted token (if any) and bring up an authenticated client by refreshing it.</summary>
     public async Task InitAsync()
     {
         if (!HasClientId)
+        {
+            _log.Debug("init skipped: no client id configured");
             return;
+        }
         var refreshToken = LoadRefreshToken();
         if (refreshToken is null)
+        {
+            _log.Debug("init: no saved token, sign-in required");
             return;
+        }
         try
         {
+            _log.Info("init: refreshing saved token");
             var fresh = await new OAuthClient().RequestToken(new PKCETokenRefreshRequest(_clientId!, refreshToken));
             if (string.IsNullOrEmpty(fresh.RefreshToken))
                 fresh.RefreshToken = refreshToken; // Spotify may omit it on refresh
             CreateClient(fresh);
+            _log.Info("init: signed in from saved token");
         }
-        catch { /* token revoked/invalid — stay signed out */ }
+        catch (Exception ex)
+        {
+            _log.Warn("init: token refresh failed, staying signed out", ex);
+        }
     }
 
     /// <summary>Interactive PKCE sign-in: opens the browser and captures the loopback redirect.</summary>
     public async Task LoginAsync()
     {
         if (!HasClientId)
+        {
+            _log.Warn("login aborted: no client id");
             throw new InvalidOperationException("Set the Spotify Client ID in Ajustes first.");
+        }
 
+        _log.Info("login: starting PKCE flow");
         var (verifier, challenge) = PKCEUtil.GenerateCodes();
 
         _server?.Dispose();
@@ -73,13 +94,19 @@ public class SpotifyService
         {
             try
             {
+                _log.Info("login: authorization code received, exchanging for token");
                 await _server.Stop();
                 var token = await new OAuthClient().RequestToken(
                     new PKCETokenRequest(_clientId!, response.Code, _server.BaseUri, verifier));
                 CreateClient(token);
+                _log.Info("login: signed in");
                 done.TrySetResult(true);
             }
-            catch (Exception ex) { done.TrySetException(ex); }
+            catch (Exception ex)
+            {
+                _log.Error("login: token exchange failed", ex);
+                done.TrySetException(ex);
+            }
         };
 
         var login = new LoginRequest(_server.BaseUri, _clientId!, LoginRequest.ResponseType.Code)
@@ -100,6 +127,7 @@ public class SpotifyService
             },
         };
         BrowserUtil.Open(login.ToUri());
+        _log.Info("login: opened browser, awaiting callback");
 
         using var timeout = new System.Threading.CancellationTokenSource(TimeSpan.FromMinutes(3));
         timeout.Token.Register(() => done.TrySetCanceled());
@@ -109,7 +137,8 @@ public class SpotifyService
     public void Logout()
     {
         _client = null;
-        try { File.Delete(TokenPath); } catch { /* ignore */ }
+        try { File.Delete(TokenPath); } catch (Exception ex) { _log.Warn("logout: could not delete token file", ex); }
+        _log.Info("signed out");
         StateChanged?.Invoke();
     }
 
@@ -202,17 +231,21 @@ public class SpotifyService
     public Task QueueAsync(string uri) =>
         Run(c => c.Player.AddToQueue(new PlayerAddToQueueRequest(uri)));
 
+    // The unified Save/Remove/CheckItems send an empty/`uris`-less body in SpotifyAPI.Web 7.4.2
+    // ("Missing required field: uris"); the classic per-track endpoints work, so keep using them.
+#pragma warning disable CS0618
     public Task SaveTrackAsync(string id) =>
-        Run(c => c.Library.SaveItems(new LibrarySaveItemsRequest(new List<string> { $"spotify:track:{id}" })));
+        Run(c => c.Library.SaveTracks(new LibrarySaveTracksRequest(new List<string> { id })));
 
     public Task UnsaveTrackAsync(string id) =>
-        Run(c => c.Library.RemoveItems(new LibraryRemoveItemsRequest(new List<string> { $"spotify:track:{id}" })));
+        Run(c => c.Library.RemoveTracks(new LibraryRemoveTracksRequest(new List<string> { id })));
 
     public async Task<bool> IsSavedAsync(string id)
     {
-        var r = await Safe(c => c.Library.CheckItems(new LibraryCheckItemsRequest(new List<string> { $"spotify:track:{id}" })));
+        var r = await Safe(c => c.Library.CheckTracks(new LibraryCheckTracksRequest(new List<string> { id })));
         return r is { Count: > 0 } && r[0];
     }
+#pragma warning restore CS0618
 
     public async Task<IList<FullTrack>> SearchTracksAsync(string query)
     {
@@ -225,12 +258,13 @@ public class SpotifyService
     {
         if (_client is null) return null;
         try { return await call(_client); }
-        catch { return null; }
+        catch (Exception ex) { _log.Warn("Spotify API read failed", ex); return null; }
     }
 
     private async Task Run(Func<SpotifyClient, Task> call)
     {
         if (_client is null) return;
-        try { await call(_client); } catch { /* no active device, etc. */ }
+        try { await call(_client); }
+        catch (Exception ex) { _log.Warn("Spotify control failed (no active device?)", ex); }
     }
 }

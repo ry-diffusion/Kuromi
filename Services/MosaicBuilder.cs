@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Kuromi.Logging;
 using SkiaSharp;
 
 namespace Kuromi.Services;
@@ -17,12 +19,14 @@ public static class MosaicBuilder
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     private static readonly Dictionary<string, SKBitmap> Cache = new();
+    private static readonly ILog Logger = Log.For("MosaicBuilder");
 
     public static async Task<Bitmap?> BuildAsync(IList<string> urls, int width, int height, double tileTarget = 240)
     {
         if (urls is null || urls.Count == 0)
             return null;
 
+        var sw = Stopwatch.StartNew();
         var tiles = new List<SKBitmap>();
         foreach (var u in urls)
         {
@@ -31,9 +35,15 @@ public static class MosaicBuilder
                 tiles.Add(b);
         }
         if (tiles.Count == 0)
+        {
+            Logger.Warn($"mosaic: no covers could be downloaded ({urls.Count} urls)");
             return null;
+        }
 
-        return await Task.Run(() => Compose(tiles, width, height, tileTarget));
+        long downloadMs = sw.ElapsedMilliseconds;
+        var result = await Task.Run(() => Compose(tiles, width, height, tileTarget));
+        Logger.Info($"mosaic generated {width}x{height} from {tiles.Count} covers in {sw.ElapsedMilliseconds}ms (download {downloadMs}ms)");
+        return result;
     }
 
     private static async Task<SKBitmap?> GetAsync(string url)

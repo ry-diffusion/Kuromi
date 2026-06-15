@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Kuromi.Logging;
 
 namespace Kuromi.Services;
 
@@ -28,6 +29,7 @@ public class LyricsService
     private static readonly Regex Stamp = new(@"\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]", RegexOptions.Compiled);
 
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
+    private readonly ILog _log = Log.For<LyricsService>();
 
     private static HttpClient CreateClient()
     {
@@ -47,7 +49,10 @@ public class LyricsService
             $"https://lrclib.net/api/get?track_name={Esc(track)}&artist_name={Esc(artist)}&album_name={Esc(album)}&duration={durationSec}");
         var fromExact = exact is null ? null : Build(exact);
         if (fromExact is not null)
+        {
+            _log.Debug($"lyrics: exact hit for {artist} — {track} (synced={fromExact.Synced})");
             return fromExact;
+        }
 
         // 2) fuzzy search — take the first result that has synced lyrics, else the first plain one.
         try
@@ -56,9 +61,17 @@ public class LyricsService
             var hits = JsonSerializer.Deserialize<List<LrcDto>>(json, Json) ?? new();
             var best = hits.FirstOrDefault(h => !string.IsNullOrWhiteSpace(h.SyncedLyrics))
                        ?? hits.FirstOrDefault(h => !string.IsNullOrWhiteSpace(h.PlainLyrics));
-            return best is null ? null : Build(best);
+            var result = best is null ? null : Build(best);
+            _log.Debug(result is null
+                ? $"lyrics: none found for {artist} — {track}"
+                : $"lyrics: search hit for {artist} — {track} (synced={result.Synced})");
+            return result;
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            _log.Warn($"lyrics: search failed for {artist} — {track}", ex);
+            return null;
+        }
     }
 
     private static async Task<LrcDto?> TryGet(string url)

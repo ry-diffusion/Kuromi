@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
+using Kuromi.Logging;
 using SkiaSharp;
 
 namespace Kuromi.Glass.Rendering;
@@ -14,6 +15,11 @@ namespace Kuromi.Glass.Rendering;
 /// </summary>
 internal sealed class GlassDrawOperation : ICustomDrawOperation
 {
+    // Render runs per-frame on the render thread, so these are "log once" so they never spam.
+    private static readonly ILog Logger = Log.For("Glass.Render");
+    private static bool _warnedNoLease;
+    private static bool _warnedFallback;
+
     private readonly Rect _bounds;
     private readonly GlassDrawParameters _p;
 
@@ -32,7 +38,14 @@ internal sealed class GlassDrawOperation : ICustomDrawOperation
     {
         ISkiaSharpApiLeaseFeature? leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
         if (leaseFeature is null)
+        {
+            if (!_warnedNoLease)
+            {
+                _warnedNoLease = true;
+                Logger.Warn("no Skia lease feature — glass cannot render (software/headless renderer?)");
+            }
             return;
+        }
 
         using ISkiaSharpApiLease lease = leaseFeature.Lease();
         RenderGlass(lease.SkCanvas, lease.SkSurface, lease.GrContext);
@@ -88,6 +101,11 @@ internal sealed class GlassDrawOperation : ICustomDrawOperation
 
         if (backdrop is null)
         {
+            if (!_warnedFallback)
+            {
+                _warnedFallback = true;
+                Logger.Warn("backdrop snapshot unavailable — using frosted fallback (no live refraction)");
+            }
             FallbackFill(canvas, rect, radii);
             DrawEdgeHighlight(canvas, rect, radii, w, h);
             return;
