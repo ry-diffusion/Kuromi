@@ -16,6 +16,22 @@ public enum WidgetKind
     Media,
 }
 
+/// <summary>Where the app background image is sourced from (selectable in Ajustes).</summary>
+public enum BackgroundSource
+{
+    Wallpaper,
+    CurrentTrack,
+    Playlists,
+    RecentTracks,
+}
+
+/// <summary>Where the Material You accent is derived from (selectable in Ajustes).</summary>
+public enum AccentSource
+{
+    Wallpaper,
+    CurrentTrack,
+}
+
 /// <summary>A placed widget: kind + cell position/span on the bento grid.</summary>
 public class WidgetConfig
 {
@@ -58,11 +74,14 @@ public class KuromiConfig
     public bool UseDarkWallpaper { get; set; } = true;
     public double BlurRadius { get; set; } = 34;
     public double OverlayOpacity { get; set; } = 0.30;
-    /// <summary>Derive accent colors from the wallpaper.</summary>
-    public bool AccentFromWallpaper { get; set; } = true;
+    /// <summary>Where the Material You accent is derived from.</summary>
+    public AccentSource AccentSource { get; set; } = AccentSource.Wallpaper;
 
     /// <summary>Spotify app Client ID (PKCE flow; set in Ajustes). Redirect URI: http://127.0.0.1:5543/callback</summary>
     public string SpotifyClientId { get; set; } = "";
+
+    /// <summary>Where the app background image comes from.</summary>
+    public BackgroundSource BackgroundSource { get; set; } = BackgroundSource.Wallpaper;
 
     // --- Liquid-glass tuning (live-adjustable from Ajustes; the cards bind via DynamicResource) ---
     public double GlassRefraction { get; set; } = 72;       // RefractionAmount

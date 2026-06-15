@@ -21,6 +21,8 @@
             <conv:PathToBitmapConverter x:Key="PathToBitmap"/>
             <conv:StringToBrushConverter x:Key="StringToBrush"/>
             <conv:WidgetKindToTitleConverter x:Key="WidgetKindToTitle"/>
+            <conv:BackgroundSourceToLabelConverter x:Key="BackgroundSourceLabel"/>
+            <conv:AccentSourceToLabelConverter x:Key="AccentSourceLabel"/>
 
             <!-- App font (Funnel Sans, statically instanced weights bundled in Assets/Fonts) -->
             <FontFamily x:Key="AppFont">avares://Kuromi/Assets/Fonts/#Funnel Sans</FontFamily>

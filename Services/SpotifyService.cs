@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
@@ -93,6 +94,9 @@ public class SpotifyService
                 Scopes.UserReadCurrentlyPlaying,
                 Scopes.PlaylistReadPrivate,
                 Scopes.PlaylistReadCollaborative,
+                Scopes.UserReadRecentlyPlayed,
+                Scopes.UserLibraryRead,
+                Scopes.UserLibraryModify,
             },
         };
         BrowserUtil.Open(login.ToUri());
@@ -149,6 +153,24 @@ public class SpotifyService
         return page?.Items ?? new List<FullPlaylist>();
     }
 
+    /// <summary>Album-art URLs of recently played tracks (for the configurable background).</summary>
+    public async Task<IList<string>> GetRecentTrackArtsAsync()
+    {
+        var r = await Safe(c => c.Player.GetRecentlyPlayed(new PlayerRecentlyPlayedRequest { Limit = 40 }));
+        return r?.Items?
+            .Select(i => i.Track?.Album?.Images?.FirstOrDefault()?.Url)
+            .Where(u => !string.IsNullOrEmpty(u)).Select(u => u!).Distinct().ToList()
+            ?? new List<string>();
+    }
+
+    /// <summary>Cover-art URLs of the user's playlists (for the configurable background).</summary>
+    public async Task<IList<string>> GetPlaylistArtsAsync()
+    {
+        var pls = await GetPlaylistsAsync();
+        return pls.Select(p => p.Images?.FirstOrDefault()?.Url)
+            .Where(u => !string.IsNullOrEmpty(u)).Select(u => u!).Distinct().ToList();
+    }
+
     // --- Control -----------------------------------------------------------------------------------
     public Task PlayPauseAsync(bool isPlaying) =>
         Run(c => isPlaying ? c.Player.PausePlayback() : c.Player.ResumePlayback());
@@ -164,6 +186,39 @@ public class SpotifyService
 
     public Task SeekAsync(int positionMs) =>
         Run(c => c.Player.SeekTo(new PlayerSeekToRequest(positionMs)));
+
+    public Task SetShuffleAsync(bool on) =>
+        Run(c => c.Player.SetShuffle(new PlayerShuffleRequest(on)));
+
+    public Task SetRepeatAsync(PlayerSetRepeatRequest.State state) =>
+        Run(c => c.Player.SetRepeat(new PlayerSetRepeatRequest(state)));
+
+    public Task SetVolumeAsync(int percent) =>
+        Run(c => c.Player.SetVolume(new PlayerVolumeRequest(Math.Clamp(percent, 0, 100))));
+
+    public Task PlayTrackAsync(string uri) =>
+        Run(c => c.Player.ResumePlayback(new PlayerResumePlaybackRequest { Uris = new List<string> { uri } }));
+
+    public Task QueueAsync(string uri) =>
+        Run(c => c.Player.AddToQueue(new PlayerAddToQueueRequest(uri)));
+
+    public Task SaveTrackAsync(string id) =>
+        Run(c => c.Library.SaveItems(new LibrarySaveItemsRequest(new List<string> { $"spotify:track:{id}" })));
+
+    public Task UnsaveTrackAsync(string id) =>
+        Run(c => c.Library.RemoveItems(new LibraryRemoveItemsRequest(new List<string> { $"spotify:track:{id}" })));
+
+    public async Task<bool> IsSavedAsync(string id)
+    {
+        var r = await Safe(c => c.Library.CheckItems(new LibraryCheckItemsRequest(new List<string> { $"spotify:track:{id}" })));
+        return r is { Count: > 0 } && r[0];
+    }
+
+    public async Task<IList<FullTrack>> SearchTracksAsync(string query)
+    {
+        var r = await Safe(c => c.Search.Item(new SearchRequest(SearchRequest.Types.Track, query) { Limit = 24 }));
+        return r?.Tracks?.Items ?? new List<FullTrack>();
+    }
 
     // --- helpers -----------------------------------------------------------------------------------
     private async Task<T?> Safe<T>(Func<SpotifyClient, Task<T>> call) where T : class

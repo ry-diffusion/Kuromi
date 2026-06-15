@@ -41,6 +41,30 @@ public partial class SpotifyPlaylistViewModel : ViewModelBase
     }
 }
 
+public partial class SpotifyResultViewModel : ViewModelBase
+{
+    public string Title { get; }
+    public string Artist { get; }
+    public string Uri { get; }
+    [ObservableProperty] private Bitmap? _art;
+
+    public SpotifyResultViewModel(string title, string artist, string uri, string? artUrl)
+    {
+        Title = title;
+        Artist = artist;
+        Uri = uri;
+        if (!string.IsNullOrEmpty(artUrl))
+            _ = LoadAsync(artUrl);
+    }
+
+    private async Task LoadAsync(string url)
+    {
+        var b = await ImageCache.GetAsync(url);
+        if (b is not null)
+            Dispatcher.UIThread.Post(() => Art = b);
+    }
+}
+
 public partial class SpotifyDeviceViewModel(string id, string name, string type, bool isActive) : ViewModelBase
 {
     public string Id { get; } = id;
@@ -67,8 +91,14 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
     private readonly DispatcherTimer _timer;
 
     private string? _currentTrackId;
-    private int _durationMs;
     private bool _loadingLyrics;
+    private bool _scrubbing;
+    private bool _suppressVolume;
+    private DateTime _volumeTouchedAt;
+    private DispatcherTimer? _searchDebounce;
+    private DispatcherTimer? _volumeDebounce;
+
+    [ObservableProperty] private int _durationMs;
 
     [ObservableProperty] private bool _hasClientId;
     [ObservableProperty] private bool _isAuthenticated;
@@ -83,6 +113,15 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _positionText = "0:00";
     [ObservableProperty] private string _durationText = "0:00";
     [ObservableProperty] private string _deviceName = "";
+    [ObservableProperty] private bool _isShuffle;
+    [ObservableProperty] private bool _repeatOn;
+    [ObservableProperty] private string _repeatIcon = "repeat";
+    [ObservableProperty] private string _repeatMode = "off";
+    [ObservableProperty] private int _volume = 60;
+    [ObservableProperty] private bool _isLiked;
+    [ObservableProperty] private double _seekMs;
+    [ObservableProperty] private string _searchQuery = "";
+    [ObservableProperty] private bool _hasSearch;
 
     [ObservableProperty] private bool _hasLyrics;
     [ObservableProperty] private bool _lyricsSynced;
@@ -92,6 +131,7 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
     public ObservableCollection<SpotifyPlaylistViewModel> Playlists { get; } = new();
     public ObservableCollection<SpotifyDeviceViewModel> Devices { get; } = new();
     public ObservableCollection<LyricLineViewModel> Lyrics { get; } = new();
+    public ObservableCollection<SpotifyResultViewModel> SearchResults { get; } = new();
 
     public SpotifyViewModel(SpotifyService spotify, LyricsService lyrics)
     {
@@ -100,6 +140,10 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
         _spotify.StateChanged += OnStateChanged;
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += async (_, _) => await PollAsync();
+        _searchDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _searchDebounce.Tick += async (_, _) => { _searchDebounce!.Stop(); await SearchAsync(); };
+        _volumeDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        _volumeDebounce.Tick += async (_, _) => { _volumeDebounce!.Stop(); await _spotify.SetVolumeAsync(Volume); };
         HasClientId = _spotify.HasClientId;
         IsAuthenticated = _spotify.IsAuthenticated;
     }
@@ -200,6 +244,95 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private Task Refresh() => RefreshLibraryAsync();
 
+    [RelayCommand]
+    private async Task ToggleShuffle()
+    {
+        IsShuffle = !IsShuffle;
+        await _spotify.SetShuffleAsync(IsShuffle);
+    }
+
+    [RelayCommand]
+    private async Task CycleRepeat()
+    {
+        var next = RepeatMode switch { "off" => "context", "context" => "track", _ => "off" };
+        SetRepeatVisual(next);
+        var state = next switch
+        {
+            "context" => PlayerSetRepeatRequest.State.Context,
+            "track" => PlayerSetRepeatRequest.State.Track,
+            _ => PlayerSetRepeatRequest.State.Off,
+        };
+        await _spotify.SetRepeatAsync(state);
+    }
+
+    [RelayCommand]
+    private async Task ToggleLike()
+    {
+        if (_currentTrackId is null) return;
+        if (IsLiked) { await _spotify.UnsaveTrackAsync(_currentTrackId); IsLiked = false; }
+        else { await _spotify.SaveTrackAsync(_currentTrackId); IsLiked = true; }
+    }
+
+    [RelayCommand]
+    private async Task PlayResult(SpotifyResultViewModel? r)
+    {
+        if (r is null) return;
+        await _spotify.PlayTrackAsync(r.Uri);
+        await DelayedPoll();
+    }
+
+    [RelayCommand]
+    private Task QueueResult(SpotifyResultViewModel? r) =>
+        r is null ? Task.CompletedTask : _spotify.QueueAsync(r.Uri);
+
+    // Seek scrubbing — the view calls these from the seek slider's pointer press/release.
+    public void BeginScrub() => _scrubbing = true;
+
+    public void EndScrub()
+    {
+        _scrubbing = false;
+        _ = SeekAndPollAsync();
+    }
+
+    private async Task SeekAndPollAsync()
+    {
+        await _spotify.SeekAsync((int)SeekMs);
+        await DelayedPoll();
+    }
+
+    partial void OnVolumeChanged(int value)
+    {
+        if (_suppressVolume) return;
+        _volumeTouchedAt = DateTime.UtcNow;
+        _volumeDebounce?.Stop();
+        _volumeDebounce?.Start();
+    }
+
+    partial void OnSearchQueryChanged(string value)
+    {
+        _searchDebounce?.Stop();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            SearchResults.Clear();
+            HasSearch = false;
+            return;
+        }
+        _searchDebounce?.Start();
+    }
+
+    private async Task SearchAsync()
+    {
+        var q = SearchQuery;
+        if (string.IsNullOrWhiteSpace(q)) return;
+        var tracks = await _spotify.SearchTracksAsync(q);
+        SearchResults.Clear();
+        foreach (var t in tracks)
+            SearchResults.Add(new SpotifyResultViewModel(
+                t.Name, string.Join(", ", t.Artists.Select(a => a.Name)), t.Uri,
+                t.Album?.Images?.LastOrDefault()?.Url));
+        HasSearch = SearchResults.Count > 0;
+    }
+
     private async Task DelayedPoll()
     {
         await Task.Delay(350);
@@ -219,7 +352,10 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
             Artist = string.Join(", ", t.Artists.Select(a => a.Name));
             IsPlaying = pb.IsPlaying;
             DeviceName = pb.Device?.Name ?? "";
-            _durationMs = t.DurationMs;
+            DurationMs = t.DurationMs;
+            IsShuffle = pb.ShuffleState;
+            SetRepeatVisual(pb.RepeatState ?? "off");
+            UpdateVolumeFromDevice(pb.Device?.VolumePercent);
             UpdateProgress(pb.ProgressMs);
 
             if (t.Id != _currentTrackId)
@@ -228,6 +364,7 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
                 _ = LoadArtAsync(t.Album?.Images?.FirstOrDefault()?.Url);
                 _ = LoadLyricsAsync(t);
                 _ = RefreshQueueAsync();
+                _ = RefreshLikedAsync(t.Id);
             }
         }
         else
@@ -238,10 +375,32 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
 
     private void UpdateProgress(int posMs)
     {
-        Progress = _durationMs > 0 ? Math.Clamp((double)posMs / _durationMs, 0, 1) : 0;
+        Progress = DurationMs > 0 ? Math.Clamp((double)posMs / DurationMs, 0, 1) : 0;
+        if (!_scrubbing)
+            SeekMs = posMs;
         PositionText = Fmt(posMs);
-        DurationText = Fmt(_durationMs);
+        DurationText = Fmt(DurationMs);
         SyncLyrics(posMs);
+    }
+
+    private void UpdateVolumeFromDevice(int? deviceVolume)
+    {
+        // Don't fight the user: only adopt the device volume when they haven't touched the slider recently.
+        if (deviceVolume is int v && (DateTime.UtcNow - _volumeTouchedAt).TotalSeconds > 2)
+        {
+            _suppressVolume = true;
+            Volume = v;
+            _suppressVolume = false;
+        }
+    }
+
+    private async Task RefreshLikedAsync(string id) => IsLiked = await _spotify.IsSavedAsync(id);
+
+    private void SetRepeatVisual(string mode)
+    {
+        RepeatMode = mode;
+        RepeatOn = mode != "off";
+        RepeatIcon = mode == "track" ? "repeat-1" : "repeat";
     }
 
     private void SyncLyrics(int posMs)
@@ -335,5 +494,7 @@ public partial class SpotifyViewModel : ViewModelBase, IDisposable
     {
         _spotify.StateChanged -= OnStateChanged;
         _timer.Stop();
+        _searchDebounce?.Stop();
+        _volumeDebounce?.Stop();
     }
 }

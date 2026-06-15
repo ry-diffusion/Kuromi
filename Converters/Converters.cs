@@ -45,6 +45,42 @@ public class WidgetKindToTitleConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>Maps a <see cref="Kuromi.Models.BackgroundSource"/> to its pt-BR label.</summary>
+public class BackgroundSourceToLabelConverter : IValueConverter
+{
+    public static readonly BackgroundSourceToLabelConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value switch
+        {
+            Kuromi.Models.BackgroundSource.Wallpaper => "Wallpaper",
+            Kuromi.Models.BackgroundSource.CurrentTrack => "Música atual",
+            Kuromi.Models.BackgroundSource.Playlists => "Playlists",
+            Kuromi.Models.BackgroundSource.RecentTracks => "Tocadas recentemente",
+            _ => value?.ToString(),
+        };
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+/// <summary>Maps an <see cref="Kuromi.Models.AccentSource"/> to its pt-BR label.</summary>
+public class AccentSourceToLabelConverter : IValueConverter
+{
+    public static readonly AccentSourceToLabelConverter Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value switch
+        {
+            Kuromi.Models.AccentSource.Wallpaper => "Wallpaper",
+            Kuromi.Models.AccentSource.CurrentTrack => "Música atual",
+            _ => value?.ToString(),
+        };
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 /// <summary>Converts a "#RRGGBB" string to a <see cref="Avalonia.Media.SolidColorBrush"/>.</summary>
 public class StringToBrushConverter : IValueConverter
 {

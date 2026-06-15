@@ -57,22 +57,40 @@
                                            IsChecked="{Binding DarkMode, Mode=TwoWay}"/>
                     </Grid>
 
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                        <controls:LucideIcon Grid.Column="0" Kind="sparkles" Width="18" Height="18"
-                                             VerticalAlignment="Center" Brush="{DynamicResource AccentBrush}"/>
-                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center" Spacing="1">
-                            <TextBlock Text="Cor do papel de parede" Foreground="{DynamicResource TextPrimary}"/>
-                            <TextBlock Text="Deriva o accent do wallpaper (Material You)" Classes="muted" FontSize="11"/>
-                        </StackPanel>
-                        <glass:GlassSwitch Grid.Column="2" VerticalAlignment="Center"
-                                           IsChecked="{Binding AccentFromWallpaper, Mode=TwoWay}"/>
-                    </Grid>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Cor de destaque (accent)" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassComboBox ItemsSource="{Binding AccentSources}"
+                                             SelectedItem="{Binding AccentSource, Mode=TwoWay}"
+                                             HorizontalAlignment="Stretch" Height="40">
+                            <glass:GlassComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource AccentSourceLabel}}"/>
+                                </DataTemplate>
+                            </glass:GlassComboBox.ItemTemplate>
+                        </glass:GlassComboBox>
+                        <TextBlock Text="Material You do wallpaper ou da capa da música" Classes="muted" FontSize="11"/>
+                    </StackPanel>
 
                     <StackPanel Spacing="6">
                         <TextBlock Text="Escurecer fundo" Foreground="{DynamicResource TextPrimary}"/>
                         <glass:GlassSlider Minimum="0" Maximum="0.7"
                                            Value="{Binding OverlayOpacity, Mode=TwoWay}"
                                            Foreground="{DynamicResource Accent2Brush}"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Fundo" Foreground="{DynamicResource TextPrimary}"/>
+                        <glass:GlassComboBox ItemsSource="{Binding BackgroundSources}"
+                                             SelectedItem="{Binding BackgroundSource, Mode=TwoWay}"
+                                             HorizontalAlignment="Stretch" Height="40">
+                            <glass:GlassComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource BackgroundSourceLabel}}"/>
+                                </DataTemplate>
+                            </glass:GlassComboBox.ItemTemplate>
+                        </glass:GlassComboBox>
+                        <TextBlock Text="Música atual/Playlists/Recentes precisam do Spotify conectado"
+                                   Classes="muted" FontSize="11"/>
                     </StackPanel>
                 </StackPanel>
             </glass:GlassSurface>
@@ -89,7 +107,7 @@
                     <StackPanel Spacing="6">
                         <TextBlock Text="Client ID" Foreground="{DynamicResource TextPrimary}"/>
                         <TextBox Text="{Binding SpotifyClientId, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                 Watermark="cole o Client ID do app Spotify"/>
+                                 PlaceholderText="cole o Client ID do app Spotify"/>
                     </StackPanel>
 
                     <StackPanel Spacing="2">

@@ -19,41 +19,48 @@ public readonly record struct DynamicPalette(
 
 public static class MaterialPalette
 {
-    /// <summary>Extract a Material You scheme from an image, or null if it fails.</summary>
+    /// <summary>Extract a Material You scheme from an image file, or null if it fails.</summary>
     public static DynamicPalette? FromImage(string path, bool dark)
     {
-        try
-        {
-            using var decoded = SKBitmap.Decode(path);
-            if (decoded == null) return null;
+        try { using var b = SKBitmap.Decode(path); return FromBitmap(b, dark); }
+        catch { return null; }
+    }
 
-            // Downscale so quantization is fast (Material's own pipeline uses ~112px).
-            using var small = decoded.Resize(new SKImageInfo(112, 112),
-                new SKSamplingOptions(SKFilterMode.Linear)) ?? decoded;
+    /// <summary>Extract a Material You scheme from encoded image bytes (e.g. a downloaded album cover).</summary>
+    public static DynamicPalette? FromBytes(byte[] bytes, bool dark)
+    {
+        try { using var b = SKBitmap.Decode(bytes); return FromBitmap(b, dark); }
+        catch { return null; }
+    }
 
-            var pixels = System.Array.ConvertAll(small.Pixels, p => (uint)p);
-            var seed = ImageUtils.ColorsFromImage(pixels).FirstOrDefault();
-            if (seed == 0) return null;
+    private static DynamicPalette? FromBitmap(SKBitmap? decoded, bool dark)
+    {
+        if (decoded == null) return null;
 
-            var core = CorePalette.Of(seed);
-            Scheme<uint> s = dark
-                ? new DarkSchemeMapper().Map(core)
-                : new LightSchemeMapper().Map(core);
+        // Downscale so quantization is fast (Material's own pipeline uses ~112px).
+        var small = decoded.Resize(new SKImageInfo(112, 112), new SKSamplingOptions(SKFilterMode.Linear));
+        var src = small ?? decoded;
 
-            Color accent = Vibrant(s.Primary);
-            return new DynamicPalette(
-                Accent: accent,
-                Secondary: Vibrant(s.Secondary),
-                Tertiary: Vibrant(s.Tertiary),
-                OnAccent: OnColor(accent),
-                TextPrimary: C(s.OnSurface),
-                TextSecondary: C(s.OnSurfaceVariant),
-                TextMuted: C(core.NeutralVariant[(uint)(dark ? 65 : 45)]));
-        }
-        catch
-        {
-            return null;
-        }
+        var pixels = Array.ConvertAll(src.Pixels, p => (uint)p);
+        small?.Dispose();
+
+        var seed = ImageUtils.ColorsFromImage(pixels).FirstOrDefault();
+        if (seed == 0) return null;
+
+        var core = CorePalette.Of(seed);
+        Scheme<uint> s = dark
+            ? new DarkSchemeMapper().Map(core)
+            : new LightSchemeMapper().Map(core);
+
+        Color accent = Vibrant(s.Primary);
+        return new DynamicPalette(
+            Accent: accent,
+            Secondary: Vibrant(s.Secondary),
+            Tertiary: Vibrant(s.Tertiary),
+            OnAccent: OnColor(accent),
+            TextPrimary: C(s.OnSurface),
+            TextSecondary: C(s.OnSurfaceVariant),
+            TextMuted: C(core.NeutralVariant[(uint)(dark ? 65 : 45)]));
     }
 
     private static Color C(uint argb) => Color.FromUInt32(argb);

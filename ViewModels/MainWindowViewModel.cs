@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Media;
@@ -39,10 +42,17 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _spotifyClientId = "";
     public string SpotifyRedirectUri => Services.SpotifyService.RedirectUri;
 
+    // --- Background (selectable in Ajustes) ---
+    [ObservableProperty] private BackgroundSource _backgroundSource = BackgroundSource.Wallpaper;
+    [ObservableProperty] private Bitmap? _backgroundImage;
+    [ObservableProperty] private double _backgroundBlur;
+    public BackgroundSource[] BackgroundSources { get; } = Enum.GetValues<BackgroundSource>();
+
     // --- Settings (the "Ajustes" tab) ---
     private bool _settingsLoading = true;
     [ObservableProperty] private bool _darkMode = true;
-    [ObservableProperty] private bool _accentFromWallpaper = true;
+    [ObservableProperty] private AccentSource _accentSource = AccentSource.Wallpaper;
+    public AccentSource[] AccentSources { get; } = Enum.GetValues<AccentSource>();
     public string BackendName => _services.Desktop.Name;
 
     // --- Liquid-glass tuning (applied live to the cards via app resources) ---
@@ -77,7 +87,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Dashboard = new DashboardViewModel(_services, _config);
         Dashboard.WallpaperShouldRefresh += () => _ = LoadWallpaperAsync();
 
-        _accentFromWallpaper = _config.AccentFromWallpaper; // field (no persist during init)
+        _accentSource = _config.AccentSource; // field (no persist during init)
         _glassRefraction = _config.GlassRefraction;
         _glassRefractionHeight = _config.GlassRefractionHeight;
         _glassDepth = _config.GlassDepth;
@@ -100,6 +110,11 @@ public partial class MainWindowViewModel : ViewModelBase
         Spotify = new SpotifyViewModel(_services.Spotify, _services.Lyrics);
         _spotifyClientId = _config.SpotifyClientId;
         _ = _services.Spotify.InitAsync();
+
+        // Background: follow the configured source (wallpaper or a Spotify-derived image).
+        _backgroundSource = _config.BackgroundSource;
+        Spotify.PropertyChanged += OnSpotifyPropertyChanged;
+        ApplyBackground();
 
         // Reload the wallpaper + accent when the system wallpaper/theme changes.
         _wallpaperDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
@@ -127,8 +142,16 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(ShowDashboard));
         OnPropertyChanged(nameof(ShowSpotify));
         OnPropertyChanged(nameof(ShowSettings));
-        if (ShowSpotify) Spotify.Activate();
-        else Spotify.Deactivate();
+        UpdateSpotifyPolling();
+    }
+
+    /// <summary>Poll Spotify while its tab is open OR the background follows the current track.</summary>
+    private void UpdateSpotifyPolling()
+    {
+        if (ShowSpotify || BackgroundSource == BackgroundSource.CurrentTrack || AccentSource == AccentSource.CurrentTrack)
+            Spotify.Activate();
+        else
+            Spotify.Deactivate();
     }
 
     partial void OnSpotifyClientIdChanged(string value)
@@ -139,6 +162,72 @@ public partial class MainWindowViewModel : ViewModelBase
         Spotify.RefreshClientId();
         ScheduleSave();
         _ = _services.Spotify.InitAsync();
+    }
+
+    // --- Background ---
+    partial void OnBackgroundSourceChanged(BackgroundSource value)
+    {
+        if (_settingsLoading) return;
+        _config.BackgroundSource = value;
+        ScheduleSave();
+        ApplyBackground();
+    }
+
+    partial void OnWallpaperChanged(Bitmap? value)
+    {
+        if (BackgroundSource == BackgroundSource.Wallpaper)
+            BackgroundImage = value;
+    }
+
+    private void OnSpotifyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(SpotifyViewModel.Art))
+            return;
+        if (BackgroundSource == BackgroundSource.CurrentTrack)
+            BackgroundImage = Spotify.Art ?? Wallpaper;
+        if (AccentSource == AccentSource.CurrentTrack)
+            _ = ApplyMusicAccentAsync();
+    }
+
+    private void ApplyBackground()
+    {
+        switch (BackgroundSource)
+        {
+            case BackgroundSource.CurrentTrack:
+                BackgroundBlur = 28; // blur-extend the single square cover to fill
+                BackgroundImage = Spotify.Art ?? Wallpaper;
+                break;
+            case BackgroundSource.Playlists:
+                BackgroundBlur = 6; // a tiled mosaic already fills the screen; keep it mostly visible
+                _ = BuildMosaicAsync(_services.Spotify.GetPlaylistArtsAsync());
+                break;
+            case BackgroundSource.RecentTracks:
+                BackgroundBlur = 6;
+                _ = BuildMosaicAsync(_services.Spotify.GetRecentTrackArtsAsync());
+                break;
+            default: // Wallpaper
+                BackgroundBlur = 0;
+                BackgroundImage = Wallpaper;
+                break;
+        }
+        UpdateSpotifyPolling();
+    }
+
+    /// <summary>Compose the covers into a tiled mosaic that fills the screen (repeating to fit).</summary>
+    private async Task BuildMosaicAsync(Task<IList<string>> fetch)
+    {
+        BackgroundImage = Wallpaper; // show the wallpaper until the mosaic is composed
+        var urls = (await fetch).ToList();
+        if (urls.Count == 0)
+        {
+            BackgroundBlur = 0;
+            BackgroundImage = Wallpaper;
+            return;
+        }
+        var mosaic = await MosaicBuilder.BuildAsync(urls, 1920, 1080);
+        // The source may have changed while building.
+        if (mosaic is not null && BackgroundSource is BackgroundSource.Playlists or BackgroundSource.RecentTracks)
+            BackgroundImage = mosaic;
     }
 
     private async Task InitSettingsAsync()
@@ -158,14 +247,20 @@ public partial class MainWindowViewModel : ViewModelBase
         await _services.Desktop.SetDarkModeAsync(value);
         await Task.Delay(300);
         await LoadWallpaperAsync(); // light/dark wallpaper + accent follow the theme
+        if (AccentSource == AccentSource.CurrentTrack)
+            await ApplyMusicAccentAsync(); // re-derive the music accent for the new scheme
     }
 
-    partial void OnAccentFromWallpaperChanged(bool value)
+    partial void OnAccentSourceChanged(AccentSource value)
     {
         if (_settingsLoading) return;
-        _config.AccentFromWallpaper = value;
+        _config.AccentSource = value;
         ScheduleSave();
-        _ = LoadWallpaperAsync();
+        UpdateSpotifyPolling();
+        if (value == AccentSource.Wallpaper)
+            _ = LoadWallpaperAsync();   // re-derive the accent from the wallpaper
+        else
+            _ = ApplyMusicAccentAsync(); // from the current track's cover
     }
 
     partial void OnOverlayOpacityChanged(double value)
@@ -248,7 +343,7 @@ public partial class MainWindowViewModel : ViewModelBase
             var bmp = await Task.Run(() => new Bitmap(path));
             Wallpaper = bmp;
 
-            if (_config.AccentFromWallpaper)
+            if (AccentSource == AccentSource.Wallpaper)
                 await ApplyAccentAsync(path, preferDark);
         }
         catch { /* keep previous / none */ }
@@ -262,24 +357,40 @@ public partial class MainWindowViewModel : ViewModelBase
     private static async Task ApplyAccentAsync(string path, bool dark)
     {
         var palette = await Task.Run(() => MaterialPalette.FromImage(path, dark));
-        if (palette is not { } p) return;
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            var app = Application.Current;
-            if (app is null) return;
-            app.Resources["AccentBrush"] = new SolidColorBrush(p.Accent);
-            app.Resources["Accent2Brush"] = new SolidColorBrush(p.Secondary);
-            app.Resources["InfoBrush"] = new SolidColorBrush(p.Tertiary);
-            app.Resources["OnAccentBrush"] = new SolidColorBrush(p.OnAccent);
-            // Translucent accent *colors* for glass tinting (glass tints with a Color, not a Brush).
-            app.Resources["AccentColor"] = Color.FromArgb(215, p.Accent.R, p.Accent.G, p.Accent.B);
-            app.Resources["Accent2Color"] = Color.FromArgb(215, p.Secondary.R, p.Secondary.G, p.Secondary.B);
-            app.Resources["TextPrimary"] = new SolidColorBrush(p.TextPrimary);
-            app.Resources["TextSecondary"] = new SolidColorBrush(p.TextSecondary);
-            app.Resources["TextMuted"] = new SolidColorBrush(p.TextMuted);
-        });
+        if (palette is { } p) PushAccent(p);
     }
+
+    /// <summary>Derive the Material You accent from the current Spotify cover and push it app-wide.</summary>
+    private async Task ApplyMusicAccentAsync()
+    {
+        var art = Spotify.Art;
+        if (art is null) return;
+        var dark = await _services.Desktop.GetDarkModeAsync();
+        var palette = await Task.Run(() =>
+        {
+            using var ms = new MemoryStream();
+            art.Save(ms);
+            return MaterialPalette.FromBytes(ms.ToArray(), dark);
+        });
+        if (palette is { } p) PushAccent(p);
+    }
+
+    /// <summary>Push a Material You scheme into the app resources (accent + harmonized text colors).</summary>
+    private static void PushAccent(DynamicPalette p) => Dispatcher.UIThread.Post(() =>
+    {
+        var app = Application.Current;
+        if (app is null) return;
+        app.Resources["AccentBrush"] = new SolidColorBrush(p.Accent);
+        app.Resources["Accent2Brush"] = new SolidColorBrush(p.Secondary);
+        app.Resources["InfoBrush"] = new SolidColorBrush(p.Tertiary);
+        app.Resources["OnAccentBrush"] = new SolidColorBrush(p.OnAccent);
+        // Translucent accent *colors* for glass tinting (glass tints with a Color, not a Brush).
+        app.Resources["AccentColor"] = Color.FromArgb(215, p.Accent.R, p.Accent.G, p.Accent.B);
+        app.Resources["Accent2Color"] = Color.FromArgb(215, p.Secondary.R, p.Secondary.G, p.Secondary.B);
+        app.Resources["TextPrimary"] = new SolidColorBrush(p.TextPrimary);
+        app.Resources["TextSecondary"] = new SolidColorBrush(p.TextSecondary);
+        app.Resources["TextMuted"] = new SolidColorBrush(p.TextMuted);
+    });
 
     [RelayCommand]
     private void ToggleEdit()

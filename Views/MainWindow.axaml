@@ -16,9 +16,13 @@
         WindowStartupLocation="CenterScreen">
 
     <Grid>
-        <!-- ===== Sharp wallpaper (the liquid-glass cards do the blurring) ===== -->
-        <Image Source="{Binding Wallpaper}" Stretch="UniformToFill"
-               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <!-- ===== Background (wallpaper, or a Spotify-derived image blurred to fill) ===== -->
+        <Image Source="{Binding BackgroundImage}" Stretch="UniformToFill"
+               HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Image.Effect>
+                <BlurEffect Radius="{Binding BackgroundBlur}"/>
+            </Image.Effect>
+        </Image>
         <Border Background="Black" Opacity="{Binding OverlayOpacity}"/>
 
         <!-- ===== Bento grid (fills the screen) ===== -->
